@@ -507,7 +507,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <header class="topbar">
     <div class="brand">
       <h1>מעבדת וידאו</h1>
-      <span class="sub">ניתוח תנועה מסרטון · גרסה 2.9</span>
+      <span class="sub">ניתוח תנועה מסרטון · גרסה 3.0</span>
     </div>
     <button id="guidebtn" class="helpbtn" title="מדריך שלב-שלב">🧭<span class="tx"> מדריך שלב-שלב</span></button>
     <button id="stuckbtn" class="helpbtn" title="נתקעתי">🆘<span class="tx"> נתקעתי</span></button>
@@ -685,7 +685,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <div class="modal" id="help" hidden>
     <div class="hsheet" role="dialog" aria-modal="true" aria-label="הוראות">
       <header class="hhead">
-        <h2>איך מנתחים סרטון <small style="font-weight:400;font-size:.62em;opacity:.7">גרסה 2.9</small></h2>
+        <h2>איך מנתחים סרטון <small style="font-weight:400;font-size:.62em;opacity:.7">גרסה 3.0</small></h2>
         <div class="htabs">
           <button data-h="pc">💻 מחשב</button>
           <button data-h="ph">📱 טלפון</button>
@@ -1094,7 +1094,7 @@ ov.addEventListener("pointerdown",e=>{
     ov.setPointerCapture(e.pointerId);
     if(e.pointerType==="touch"){                 // holding a handle still: the axes menu
       clearTimeout(pressT);
-      pressT=setTimeout(()=>{ if(drag && !drag.movedFar){ drag=null; openMenu({clientX:e.clientX,clientY:e.clientY}); } },1500);
+      pressT=setTimeout(()=>{ if(drag && !drag.movedFar){ drag=null; openMenu({clientX:e.clientX,clientY:e.clientY,touch:1}); } },1500);
     }
     return;
   }
@@ -1109,7 +1109,7 @@ ov.addEventListener("pointerdown",e=>{
     drag={what:"touch", cx:e.clientX, cy:e.clientY, x0:e.clientX, y0:e.clientY, moved:false, p, t:Date.now()};
     ov.setPointerCapture(e.pointerId);
     clearTimeout(pressT);
-    pressT=setTimeout(()=>{ if(drag && drag.what==="touch" && !drag.moved){ drag=null; openMenu({clientX:e.clientX,clientY:e.clientY}); } },1500);
+    pressT=setTimeout(()=>{ if(drag && drag.what==="touch" && !drag.moved){ drag=null; openMenu({clientX:e.clientX,clientY:e.clientY,touch:1}); } },1500);
     return;
   }
   tapAction(p);
@@ -1182,8 +1182,10 @@ ov.addEventListener("pointerup",endPointer);
 ov.addEventListener("pointercancel",endPointer);
 ov.addEventListener("pointerleave",()=>{ $("#pos").textContent="—"; });
 const cmenu=$("#cmenu");
+let cmenuAt=0;
 function openMenu(e){
   if(st.kind==="none") return;
+  cmenuAt=e.touch ? Date.now() : 0;
   const r0=ov.getBoundingClientRect();
   const vp={x:(e.clientX-r0.left)*(ov.width/r0.width), y:(e.clientY-r0.top)*(ov.height/r0.height)};
   const ctx=menuContext(vp) || "gen";
@@ -1209,6 +1211,7 @@ ov.addEventListener("contextmenu",e=>{ e.preventDefault(); if(e.pointerType!=="t
 document.addEventListener("pointerdown",e=>{ if(!cmenu.hidden && !cmenu.contains(e.target)) closeMenu(); },true);
 cmenu.addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;
+  if(Date.now()-cmenuAt<600){ e.preventDefault(); return; }   // the finger lifting after a long press is not a choice
   if(b.dataset.rot!==undefined){ setAngle(+b.dataset.rot); closeMenu(); return; }
   const act=b.dataset.act;
   if(act==="del"){ remember(st.sel,st.frame); if(P().delete(st.frame)) refresh(); }
@@ -2460,7 +2463,8 @@ const GSTEPS=[
  {ttl:"דיוק הצירים", b:"לא מרוצים מהמיקום? גררו את ראשית הצירים למקום אחר. לסיבוב — גררו בעכבר את העיגול שבקצה אחת הזרועות. בלחיצה ימנית (בפלאפון: לחיצה ארוכה) יש זווית מדויקת, החזרה ל-0°, היפוך הכיוון החיובי ובחירת צבע. כשהכול מדויק — המשיכו.",
    sel:["#ang"], avoid:["#overlay"]},
  {ttl:"נעלו את הצירים", b:"עכשיו שהצירים במקום — נעלו אותם כדי שלא יזוזו בטעות: לחיצה ימנית על הצירים ← «נעילת הצירים». בפלאפון — לחיצה ארוכה של שנייה וחצי.",
-   sel:["#cmenu [data-act='lock']"], avoid:["#overlay","#cmenu"], hint:"ממתין לנעילת הצירים…", say:"נעלו את הצירים לפני שממשיכים",
+   sel:["#cmenu [data-act='lock']"], at:gOrgPt, avoid:["#overlay","#cmenu"], hint:"ממתין לנעילת הצירים…", say:"נעלו את הצירים לפני שממשיכים",
+   demo:()=>gHoldDemo(gOrgPt(), gLockNote("הצירים")),
    snap:()=>!!st.locked, done:()=>!!st.locked, ok:()=>!!st.locked},
  {id:"scale", ttl:"שלב 2 · מתיחת הסרגל", b:"לחצו «2 קנה מידה». עכשיו בחרו עצם שאורכו ידוע בסרטון — סרגל, שולחן, גובה אדם — לחצו על קצה אחד שלו וגררו עד הקצה השני, בדיוק כמו שהיד מדגימה. אפשר גם לתפוס כל קצה של הסרגל הירוק ולדייק אותו.",
    sel:()=>st.mode==="cal" ? [] : ["#s2"], avoid:()=>st.mode==="cal" ? ["#overlay"] : [], hint:"ממתין למתיחת הסרגל הירוק…", say:"גררו מקצה אחד של המרחק הידוע עד הקצה השני",
@@ -2474,7 +2478,8 @@ const GSTEPS=[
    snap:()=>[$("#callen").value, st.scale], done:n=>$("#callen").value!==n[0]||st.scale!==n[1],
    ok:()=>!!st.calLocked || $("#callen").value!=="1"},
  {ttl:"נעלו את הסרגל", b:"לחיצה ימנית על הסרגל הירוק ← «נעילת הסרגל». בפלאפון — לחיצה ארוכה על הסרגל.",
-   sel:["#cmenu [data-act='callock']"], avoid:["#overlay","#cmenu"], hint:"ממתין לנעילת הסרגל…", say:"נעלו את הסרגל",
+   sel:["#cmenu [data-act='callock']"], at:gCalPt, avoid:["#overlay","#cmenu"], hint:"ממתין לנעילת הסרגל…", say:"נעלו את הסרגל",
+   demo:()=>gHoldDemo(gCalPt(), gLockNote("הסרגל")),
    snap:()=>!!st.calLocked, done:()=>!!st.calLocked, ok:()=>!!st.calLocked},
  {ttl:"איך נסמן את התנועה?", b:"יש שתי דרכים — ידנית או אוטומטית. בחרו אחת מהן.", sel:[], ask:1},
  {id:"manual", ttl:"שלב 3 · מעקב ידני", b:"לחצו «3 מעקב ידני», ואז לחצו על הגוף שאתם רוצים לעקוב אחריו — על אותה נקודה בדיוק בכל פריים.",
@@ -2559,6 +2564,15 @@ function gDemo(pts){
 function gFind(sel){ for(const q of (sel||[])){ const el=document.querySelector(q);
   if(el && el.offsetParent!==null){ const r=el.getBoundingClientRect(); if(r.width>3&&r.height>3) return el; } } return null; }
 function gVal(v){ return (typeof v==="function") ? v() : v; }
+function gVidPt(x,y){                                  // a point in video pixels -> on screen
+  const r=ov.getBoundingClientRect(); if(r.width<10) return null;
+  return {x:r.left+x*r.width/ov.width, y:r.top+y*r.height/ov.height};
+}
+function gOrgPt(){ return st.orgSet ? gVidPt(st.org.x, st.org.y) : null; }
+function gCalPt(){ return st.cal ? gVidPt((st.cal.x1*3+st.cal.x2)/4, (st.cal.y1*3+st.cal.y2)/4) : null; }   // on the stick, away from the label
+const gMenuOpen=()=>{ const m=$("#cmenu"); return !!(m && !m.hidden && m.getBoundingClientRect().height>0); };
+const gLockNote=what=>(isPhone()||COARSE) ? "לחיצה ארוכה כאן ← «נעילת "+what+"»" : "לחיצה ימנית כאן ← «נעילת "+what+"»";
+function gHoldDemo(pt,note){ return (pt && !gMenuOpen()) ? {kind:"tap", x1:pt.x, y1:pt.y, x2:pt.x, y2:pt.y, a:"", b:note} : null; }
 function gLabelPt(){                                  // the length label drawn on the green stick
   if(!st.labelBox) return null;
   const r=ov.getBoundingClientRect(); if(r.width<10) return null;
@@ -2717,7 +2731,7 @@ function gGo(i,force){
   // phone: a task step shows only the arrow / hand — the text waits in the square until it is tapped.
   // computer: the card opens on every step.
   const bub=$("#gbub"); bub.classList.remove("ok","ping");
-  gMin = isPhone() && !!s.done && !gAlready;
+  gMin = isPhone();                                   // phone: written instructions only when the square is tapped
   if(gMin){ void bub.offsetWidth; bub.classList.add("ping"); }
   $("#gtip").hidden=gMin; $("#gask").hidden=true; gShowBubble();
   $("#gnum").textContent=(i+1)+"/"+GSTEPS.length;
