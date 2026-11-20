@@ -450,6 +450,14 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
 .step .gfrom{cursor:pointer;font-size:12.5px;opacity:.7;margin-inline-start:3px}
 .step .gfrom:hover{opacity:1}
 #gtip.done .gttl{color:#8FE3C5}
+#gbub{position:fixed;z-index:62;left:10px;top:46%;width:52px;height:52px;border-radius:14px;border:none;
+  background:#14202A;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer;touch-action:none;
+  display:grid;place-items:center;font:700 13px var(--font-num);padding:0}
+#gbub .bi{font-size:20px;line-height:1}
+#gbub .bn{font-size:11px;opacity:.8;margin-top:1px}
+#gbub.ping{animation:gping 1s ease-out 2}
+#gbub.ok{background:#0E6B4F}
+@keyframes gping{0%{box-shadow:0 0 0 0 rgba(255,61,127,.7)}100%{box-shadow:0 0 0 16px rgba(255,61,127,0)}}
 #gtip{position:fixed;z-index:60;width:min(310px,88vw);background:#14202A;color:#fff;border-radius:15px;
   padding:12px 13px 11px;box-shadow:0 14px 42px rgba(0,0,0,.36);font:500 15px var(--font-body);
   line-height:1.42;text-align:right}
@@ -717,6 +725,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <div class="gnote" id="gnoteA" hidden></div><div class="gnote" id="gnoteB" hidden></div>
   <div class="gfing" id="gfing">&#9995;</div></div>
 <div id="gsay" hidden></div>
+<button id="gbub" hidden title="הצגת ההוראות"><span class="bi">&#129517;</span><span class="bn" id="gbubn">1</span></button>
 <audio id="gaudio" preload="auto"></audio>
 <div id="gpoint" hidden>&#9660;</div>
 <div id="gtip" hidden role="dialog" aria-live="polite">
@@ -725,6 +734,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <div class="gdone" id="gdone" hidden></div>
   <div class="gfoot">
     <button class="g2" id="gclose" title="סגירת המדריך">&#10005;</button>
+    <button class="g2" id="gmin" title="מזעור — ההדרכה ממשיכה ברקע">&#8212;</button>
     <button class="g2" id="gsnd" title="הסבר קולי וצלילים">&#128266;</button>
     <button class="g2" id="gsnap" title="החזרת החלונית למקומה" hidden>&#8634;</button>
     <button class="g2" id="greplay" title="שמיעה שוב">&#9654;</button>
@@ -2523,7 +2533,29 @@ function gLabelPt(){                                  // the length label drawn 
   const k=ov.width/r.width, b=st.labelBox;
   return {x:r.left+(b.x+b.w/2)/k, y:r.top+(b.y+b.h/2)/k};
 }
-let gFree=false, gDrag=null;                           // the student may drag the card out of the way
+let gFree=false, gDrag=null, gMin=false, gBubMoved=false;
+function gShowBubble(){
+  const b=$("#gbub"); b.hidden=!gMin || !gOn;
+  $("#gbubn").textContent=(gi+1)+"/"+GSTEPS.length;
+}
+function gMinimize(on){
+  gMin=on;
+  $("#gtip").hidden = on || !gOn;
+  if(on) $("#gsay").hidden=true;
+  gShowBubble();
+  if(!on) requestAnimationFrame(gPlace);
+}
+(function(){                                         // the square can be dragged up and down the edge too
+  const b=$("#gbub"); let d=null;
+  b.addEventListener("pointerdown",e=>{ d={y:e.clientY, t:b.getBoundingClientRect().top, x:e.clientX, l:b.getBoundingClientRect().left}; gBubMoved=false; b.setPointerCapture(e.pointerId); });
+  b.addEventListener("pointermove",e=>{ if(!d) return;
+    if(Math.abs(e.clientY-d.y)+Math.abs(e.clientX-d.x)>6) gBubMoved=true;
+    if(!gBubMoved) return;
+    b.style.top=Math.max(8,Math.min(innerHeight-60, d.t+e.clientY-d.y))+"px";
+    b.style.left=Math.max(6,Math.min(innerWidth-58, d.l+e.clientX-d.x))+"px"; });
+  const up=()=>{ if(d && !gBubMoved) gMinimize(false); d=null; };
+  b.addEventListener("pointerup",up); b.addEventListener("pointercancel",()=>{ d=null; });
+})();                           // the student may drag the card out of the way
 (function(){
   const head=$("#ghead"), tip=$("#gtip");
   head.addEventListener("pointerdown",e=>{
@@ -2546,7 +2578,7 @@ function gPlace(){
   const s=GSTEPS[gi], p=$("#gpoint"), tip=$("#gtip");
   if(!gOn||!s){ p.hidden=true; gDemo(null); return; }
   gDemo(s.demo ? s.demo() : null);
-  const say=$("#gsay"), stxt=gVal(s.say);
+  const say=$("#gsay"), stxt=gMin ? "" : gVal(s.say);
   if(stxt){ const fr=ov.getBoundingClientRect();
     say.hidden=false; say.textContent=stxt;
     say.classList.toggle("good", !!(s.sayGood && s.sayGood()));
@@ -2558,7 +2590,7 @@ function gPlace(){
   if(el!==gTarget){ if(gTarget) gTarget.classList.remove("gtarget"); gTarget=el; if(el) el.classList.add("gtarget"); }
   const spot = el ? null : (s.at ? s.at() : null);
   const tw=tip.offsetWidth||300, th=tip.offsetHeight||150;
-  const fixed=gFree;
+  const fixed=gFree || gMin;
   const hb=document.querySelector("header.topbar");
   const headY=(hb?hb.getBoundingClientRect().bottom:0)+10;
   if(!el && !spot){                                   // no target: a card under the toolbar
@@ -2611,9 +2643,10 @@ function gGo(i,force){
   }
   if(!GSTEPS[i]){ gStop(); return; }
   gi=i; const s=GSTEPS[i];
+  if(gMin){ const b=$("#gbub"); b.classList.remove("ok","ping"); void b.offsetWidth; b.classList.add("ping"); }
   gSnap = s.snap ? s.snap() : null;
   gAlready = s.ok ? !!s.ok() : false;
-  $("#gtip").hidden=false; $("#gask").hidden=true;
+  $("#gtip").hidden=gMin; $("#gask").hidden=true; gShowBubble();
   $("#gnum").textContent=(i+1)+"/"+GSTEPS.length;
   $("#gttl").textContent=s.ttl;
   $("#gbody").textContent=gVal(s.b);
@@ -2668,6 +2701,7 @@ function gDoneFlash(){                                  // a visible "done" beat
   gFlash=true;
   const tip=$("#gtip"), h=$("#gdone");
   gDing(false);
+  if(gMin) $("#gbub").classList.add("ok");
   tip.classList.add("done"); h.hidden=false; h.textContent="✔ יופי! ממשיכים…";
   $("#gpoint").hidden=true; $("#gsay").hidden=true; gDemo(null);
   const at=gi;
@@ -2708,7 +2742,7 @@ function gStop(){
   gOn=false; clearInterval(gPoll);
   if(gTarget){ gTarget.classList.remove("gtarget"); gTarget=null; }
   $("#gpoint").hidden=true; $("#gtip").hidden=true; $("#gask").hidden=true;
-  $("#gsay").hidden=true; gDemo(null); gHush();
+  $("#gsay").hidden=true; gDemo(null); gHush(); $("#gbub").hidden=true;
 }
 $("#gnext").onclick=()=>{
   if(gFlash){ gFlash=false; $("#gtip").classList.remove("done"); }
@@ -2717,6 +2751,7 @@ $("#gnext").onclick=()=>{
   if(s && s.last){ gDing(true); gStop(); } else gGo(gi+1);
 };
 $("#gclose").onclick=gStop;
+$("#gmin").onclick=()=>gMinimize(true);
 $("#greplay").onclick=()=>{ gSound=true; $("#gsnd").textContent="🔊"; gSpeak(gi); };
 $("#gsnd").onclick=()=>{ gSound=!gSound; $("#gsnd").textContent=gSound?"🔊":"🔇";
   if(gSound) gSpeak(gi); else gHush(); };
