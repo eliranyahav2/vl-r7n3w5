@@ -202,6 +202,11 @@ input[type=number]{font-family:var(--font-num);width:62px}
 .recbar button.rec.on{background:#fff;color:#E53935;border-radius:14px}
 .rectime{text-align:center;color:#fff;font-size:14.5px;padding:0 0 calc(14px + env(safe-area-inset-bottom))}
 .zoomfab{display:none;position:absolute;right:8px;bottom:8px;z-index:6;flex-direction:column;gap:6px}
+.vclose{position:absolute;right:8px;top:8px;z-index:7;border:1px solid var(--line);border-radius:999px;
+  background:rgba(255,255,255,.94);color:var(--ink);font:600 13px var(--font-body);padding:6px 11px;
+  box-shadow:0 2px 8px rgba(0,0,0,.22);cursor:pointer}
+.vclose:hover{border-color:#FF3D7F;color:#B4003C}
+.vclose.warn{background:#FFE8EF;border-color:#FF3D7F;color:#B4003C}
 .zoomfab button{width:40px;height:40px;border-radius:50%;font-size:22px;line-height:1;padding:0;
   background:rgba(255,255,255,.92);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.22)}
 .hint{--c:var(--accent);margin:0;margin-top:auto;padding:8px 10px;font-size:13px;color:var(--ink);
@@ -326,7 +331,8 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   .brand .sub,#srcname{display:none}
   .brand h1{font-size:17px}
   .filebtn.cam{display:inline-block}
-  .topbar #close{display:none}                 /* it lives in the settings tab on a phone */
+  .topbar #close{display:none}                 /* on a phone the ✕ chip on the frame closes the video */
+  .topbar .tx{display:none}                    /* 🧭 and 🆘 as icons: the bar stays one row */
   .topbar{gap:6px;row-gap:4px}
   .filebtn.primary,.topbar button{padding:7px 10px;font-size:13.5px}
   .stage-col{order:1}
@@ -447,7 +453,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   border-radius:12px;padding:9px 14px;font:600 15px var(--font-body);line-height:1.35;text-align:center;
   box-shadow:0 8px 26px rgba(0,0,0,.32);pointer-events:none;max-width:min(520px,88vw)}
 #gsay.good{background:rgba(14,107,79,.95)}
-.step .gfrom{cursor:pointer;font-size:12.5px;opacity:.7;margin-inline-start:3px}
+.step .gfrom{position:absolute;top:2px;left:23px;cursor:pointer;font-size:12px;line-height:16px;opacity:.7}
 .step .gfrom:hover{opacity:1}
 #gtip.done .gttl{color:#8FE3C5}
 #gbub{position:fixed;z-index:62;left:10px;top:46%;width:52px;height:52px;border-radius:14px;border:none;
@@ -492,11 +498,11 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
       <h1>מעבדת וידאו</h1>
       <span class="sub">ניתוח תנועה מסרטון</span>
     </div>
-    <button id="guidebtn" class="helpbtn">🧭 מדריך שלב-שלב</button>
-    <button id="stuckbtn" class="helpbtn">🆘 נתקעתי</button>
-    <button id="helpbtn" class="helpbtn">❓ הוראות</button>
+    <button id="guidebtn" class="helpbtn" title="מדריך שלב-שלב">🧭<span class="tx"> מדריך שלב-שלב</span></button>
+    <button id="stuckbtn" class="helpbtn" title="נתקעתי">🆘<span class="tx"> נתקעתי</span></button>
+    <button id="helpbtn" class="helpbtn" title="הוראות">❓<span class="tx"> הוראות</span></button>
     <span id="srcname">לא נטען סרטון</span>
-    <button class="filebtn primary cam" id="cambtn">📷 צילום</button>
+    <button class="filebtn primary cam" id="cambtn" title="צילום">📷<span class="tx"> צילום</span></button>
     <label class="filebtn cam" style="display:none"><input type="file" id="camfile" accept="video/*" capture="environment"></label>
     <label class="filebtn primary">טעינת סרטון…<input type="file" id="file" accept="video/*"></label>
     <button id="close" class="ghost" disabled>סגירת הסרטון</button>
@@ -550,6 +556,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
           </div></div>
           <div class="drophint" id="drophint">שחררו כאן את קובץ הסרטון</div>
           <div class="zoomfab"><button id="fzin">+</button><button id="fzout">−</button><button id="fzrst">⤢</button></div>
+          <button id="vclose" class="vclose" hidden title="סגירת הסרטון ובחירת סרטון אחר">✕ סגירת הסרטון</button>
           <input type="number" id="editlen" step="0.01" min="0.001" hidden>
           <div class="masses" id="masses"></div>
           <div class="toast" id="toast" hidden><span id="toastmsg"></span><button id="toastx" title="סגירה">✕</button></div>
@@ -1306,6 +1313,19 @@ function closeVideo(){
   setMode("org"); goto(0); refresh();
 }
 let closeArmed=0;
+let vcloseArmed=0, vcloseT=0;
+$("#vclose").onclick=()=>{
+  const b=$("#vclose");
+  if(P().size && !vcloseArmed){                       // points would be lost: ask once, inline
+    vcloseArmed=1; b.textContent="לחצו שוב לסגירה"; b.classList.add("warn");
+    clearTimeout(vcloseT);
+    vcloseT=setTimeout(()=>{ vcloseArmed=0; b.textContent="✕ סגירת הסרטון"; b.classList.remove("warn"); },3000);
+    return;
+  }
+  vcloseArmed=0; clearTimeout(vcloseT); b.textContent="✕ סגירת הסרטון"; b.classList.remove("warn");
+  closeVideo();
+};
+setInterval(()=>{ const b=$("#vclose"); const on=(st.kind==="video"); if(b.hidden===on) b.hidden=!on; },400);
 $("#close").onclick=()=>{
   const b=$("#close");
   if(P().size && !closeArmed){          // no modal dialogs — confirm inline
@@ -2533,7 +2553,22 @@ function gLabelPt(){                                  // the length label drawn 
   const k=ov.width/r.width, b=st.labelBox;
   return {x:r.left+(b.x+b.w/2)/k, y:r.top+(b.y+b.h/2)/k};
 }
-let gFree=false, gDrag=null, gMin=false, gBubMoved=false;
+let gFree=false, gDrag=null, gMin=false, gBubMoved=false, gAutoMinT=0, gAutoMinStep=-1;
+/* a task step: once its explanation has been heard (or read), the card folds away by itself */
+function gArmAutoMin(){
+  clearTimeout(gAutoMinT);
+  const s=GSTEPS[gi]; if(!gOn || !s || !s.done || gAlready) return;
+  const at=gi; gAutoMinStep=at;
+  const fold=()=>{ if(gOn && gi===at && !gFlash) gMinimize(true); };
+  const talking = gSound && !gau.paused && !gau.ended;
+  if(talking){
+    const left=isFinite(gau.duration)? Math.max(0,gau.duration-gau.currentTime) : 8;
+    gAutoMinT=setTimeout(fold, left*1000+900);
+  } else {
+    const txt=(gVal(s.b)||"").length;
+    gAutoMinT=setTimeout(fold, Math.min(9000, Math.max(3500, txt*55)));   // time to read it
+  }
+}
 function gShowBubble(){
   const b=$("#gbub"); b.hidden=!gMin || !gOn;
   $("#gbubn").textContent=(gi+1)+"/"+GSTEPS.length;
@@ -2547,13 +2582,13 @@ function gMinimize(on){
 }
 (function(){                                         // the square can be dragged up and down the edge too
   const b=$("#gbub"); let d=null;
-  b.addEventListener("pointerdown",e=>{ d={y:e.clientY, t:b.getBoundingClientRect().top, x:e.clientX, l:b.getBoundingClientRect().left}; gBubMoved=false; b.setPointerCapture(e.pointerId); });
+  b.addEventListener("pointerdown",e=>{ d={y:e.clientY, t:b.getBoundingClientRect().top, x:e.clientX, l:b.getBoundingClientRect().left}; gBubMoved=false; try{ b.setPointerCapture(e.pointerId); }catch(err){} });
   b.addEventListener("pointermove",e=>{ if(!d) return;
     if(Math.abs(e.clientY-d.y)+Math.abs(e.clientX-d.x)>6) gBubMoved=true;
     if(!gBubMoved) return;
     b.style.top=Math.max(8,Math.min(innerHeight-60, d.t+e.clientY-d.y))+"px";
     b.style.left=Math.max(6,Math.min(innerWidth-58, d.l+e.clientX-d.x))+"px"; });
-  const up=()=>{ if(d && !gBubMoved) gMinimize(false); d=null; };
+  const up=()=>{ if(d && !gBubMoved){ clearTimeout(gAutoMinT); gMinimize(false); } d=null; };
   b.addEventListener("pointerup",up); b.addEventListener("pointercancel",()=>{ d=null; });
 })();                           // the student may drag the card out of the way
 (function(){
@@ -2562,7 +2597,7 @@ function gMinimize(on){
     const r=tip.getBoundingClientRect();
     gDrag={dx:e.clientX-r.left, dy:e.clientY-r.top};
     gFree=true; $("#gsnap").hidden=false; tip.classList.add("dragging");
-    head.setPointerCapture(e.pointerId); e.preventDefault();
+    try{ head.setPointerCapture(e.pointerId); }catch(err){} e.preventDefault();
   });
   head.addEventListener("pointermove",e=>{
     if(!gDrag) return;
@@ -2578,13 +2613,19 @@ function gPlace(){
   const s=GSTEPS[gi], p=$("#gpoint"), tip=$("#gtip");
   if(!gOn||!s){ p.hidden=true; gDemo(null); return; }
   gDemo(s.demo ? s.demo() : null);
-  const say=$("#gsay"), stxt=gMin ? "" : gVal(s.say);
+  let stxt=gVal(s.say)||"";
+  if(gMin){
+    if(stxt && stxt!==gLastSay){ gLastSay=stxt; gSayUntil=Date.now()+3800; }
+    if(Date.now()>gSayUntil) stxt="";
+  } else gLastSay=stxt;
+  const say=$("#gsay");
   if(stxt){ const fr=ov.getBoundingClientRect();
     say.hidden=false; say.textContent=stxt;
     say.classList.toggle("good", !!(s.sayGood && s.sayGood()));
     const inFrame = fr.width>60 && fr.top<innerHeight-40;
     say.style.left=(inFrame ? fr.left+fr.width/2 : innerWidth/2)+"px";
-    say.style.top=(inFrame ? Math.max(10, fr.top+12) : 70)+"px";
+    const chip=$("#vclose"), below=(chip && !chip.hidden) ? 50 : 12;     // clear the ✕ chip
+    say.style.top=(inFrame ? Math.max(10, fr.top+below) : 70)+"px";
   } else say.hidden=true;
   const el=gFind(gVal(s.sel));
   if(el!==gTarget){ if(gTarget) gTarget.classList.remove("gtarget"); gTarget=el; if(el) el.classList.add("gtarget"); }
@@ -2643,7 +2684,8 @@ function gGo(i,force){
   }
   if(!GSTEPS[i]){ gStop(); return; }
   gi=i; const s=GSTEPS[i];
-  if(gMin){ const b=$("#gbub"); b.classList.remove("ok","ping"); void b.offsetWidth; b.classList.add("ping"); }
+  clearTimeout(gAutoMinT);
+  if(gMin){ gMin=false; $("#gbub").classList.remove("ok","ping"); }
   gSnap = s.snap ? s.snap() : null;
   gAlready = s.ok ? !!s.ok() : false;
   $("#gtip").hidden=gMin; $("#gask").hidden=true; gShowBubble();
@@ -2667,10 +2709,11 @@ function gGo(i,force){
   if(tel){ try{ tel.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"}); }catch(e){} }
   requestAnimationFrame(gPlace);
   gSpeak(i);
+  setTimeout(gArmAutoMin, 350);          // after playback has started, so its length is known
   if(s.ask) $("#gask").hidden=false;
 }
 const VOICE=["voice-01.m4a","voice-02.m4a","voice-03.m4a","voice-04.m4a","voice-05.m4a","voice-06.m4a","voice-07.m4a","voice-08.m4a","voice-09.m4a","voice-10.m4a","voice-11.m4a","voice-12.m4a","voice-13.m4a","voice-14.m4a","voice-15.m4a","voice-16.m4a","voice-17.m4a","voice-18.m4a","voice-19.m4a","voice-20.m4a","voice-21.m4a","voice-22.m4a","voice-23.m4a"];
-let gFlash=false, gSound=true, gAC=null;
+let gFlash=false, gSound=true, gAC=null, gLastSay="", gSayUntil=0;
 const gau=$("#gaudio");
 function gSpeak(i){                                     // the recorded explanation for this step
   try{ gau.pause(); }catch(e){}
@@ -2701,7 +2744,8 @@ function gDoneFlash(){                                  // a visible "done" beat
   gFlash=true;
   const tip=$("#gtip"), h=$("#gdone");
   gDing(false);
-  if(gMin) $("#gbub").classList.add("ok");
+  clearTimeout(gAutoMinT);
+  if(gMin){ $("#gbub").classList.add("ok"); gMinimize(false); }
   tip.classList.add("done"); h.hidden=false; h.textContent="✔ יופי! ממשיכים…";
   $("#gpoint").hidden=true; $("#gsay").hidden=true; gDemo(null);
   const at=gi;
@@ -2752,7 +2796,7 @@ $("#gnext").onclick=()=>{
 };
 $("#gclose").onclick=gStop;
 $("#gmin").onclick=()=>gMinimize(true);
-$("#greplay").onclick=()=>{ gSound=true; $("#gsnd").textContent="🔊"; gSpeak(gi); };
+$("#greplay").onclick=()=>{ gSound=true; $("#gsnd").textContent="🔊"; gSpeak(gi); setTimeout(gArmAutoMin,350); };
 $("#gsnd").onclick=()=>{ gSound=!gSound; $("#gsnd").textContent=gSound?"🔊":"🔇";
   if(gSound) gSpeak(gi); else gHush(); };
 $("#gman").onclick=()=>{ gBranch="man"; $("#gask").hidden=true; gGo(gi+1); };
@@ -2765,6 +2809,8 @@ if($("#stuckbtn2")) $("#stuckbtn2").onclick=gStuck;
 document.addEventListener("click",e=>{                  // the 🧭 beside a step number
   const g=e.target.closest(".gfrom"); if(!g) return;
   e.preventDefault(); e.stopPropagation();
+  if(g.dataset.guide==="auto") gBranch="auto";          // asking for a branch step chooses that branch
+  if(g.dataset.guide==="manual") gBranch="man";
   gStartAt(gStepIndex(g.dataset.guide), true);          // that exact step, even if it is already done
 },true);
 window.addEventListener("resize",gPlace);
