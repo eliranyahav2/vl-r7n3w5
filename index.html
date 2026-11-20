@@ -1,0 +1,2746 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#16222B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="מעבדת וידאו">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>body{margin:0}[hidden]:not([hidden=until-found]){display:none!important}</style>
+</head>
+<body>
+<title>מעבדת וידאו</title>
+<style>
+/* one deliberate light theme — a white worksheet the projector likes */
+:root{
+  --bg:#FFFFFF;
+  --panel:#FFFFFF;
+  --panel-2:#F3F6F7;
+  --ink:#14202A;
+  --muted:#5A6B77;
+  --line:#D8E1E5;
+  --line-soft:#EBF0F2;
+  --accent:#A9532A;
+  --data:#17697C;
+  --good:#2C7350;
+  --warn:#9A6B15;
+  --stagebg:#EDF1F3;
+  --c-range:#6B4FB6;
+  --c-axes:#1877B5;
+  --c-scale:#0E8168;
+  --c-mass:#C2185B;
+  --c-auto:#B06A00;
+  --shadow:0 1px 2px rgba(20,32,42,.06), 0 8px 22px -18px rgba(20,32,42,.45);
+  --font-display:Arial, "Arial Hebrew", Helvetica, sans-serif;
+  --font-body:Arial, "Arial Hebrew", Helvetica, sans-serif;
+  --font-num:Arial, "Arial Hebrew", Helvetica, sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-weight:400}
+.app{direction:rtl;height:100dvh;overflow:hidden;display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto;gap:8px;padding:8px 12px 10px;max-width:1900px;margin:0 auto}
+
+/* ---------- row 1: identity + source ---------- */
+.topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;margin-inline-end:auto}
+.brand h1{font-family:var(--font-display);font-weight:700;font-size:21px;margin:0;letter-spacing:-.01em}
+.brand .sub{color:var(--muted);font-size:14px;font-weight:300}
+#srcname{font-size:14px;color:var(--muted);font-family:var(--font-num);
+  max-width:34ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+button, .filebtn{font-family:inherit;font-size:14.5px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:7px;padding:6px 11px;cursor:pointer;line-height:1.2;
+  transition:background .12s, border-color .12s}
+button:hover, .filebtn:hover{background:var(--panel-2);border-color:var(--muted)}
+button:focus-visible,.filebtn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.ghost{background:transparent}
+button:disabled{opacity:.4;cursor:default}
+.filebtn{display:inline-block}
+.filebtn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+.filebtn.primary:hover{filter:brightness(1.08);background:var(--accent)}
+.filebtn input{display:none}
+.filebtn.cam,.mnav{display:none}
+select,input[type=number]{font-family:inherit;font-size:14.5px;color:var(--ink);
+  background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:5px 7px}
+input[type=number]{font-family:var(--font-num);width:62px}
+
+/* ---------- side rail: the five steps, the settings, the live hint ---------- */
+.rail{background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);
+  padding:9px;display:flex;flex-direction:column;gap:9px;min-height:0;overflow:auto}
+.steps{display:flex;flex-direction:column;gap:5px;list-style:none;margin:0;padding:0}
+.step{--c:var(--muted);width:100%;display:grid;grid-template-columns:22px 1fr;grid-template-rows:auto auto;
+  column-gap:8px;row-gap:0;align-items:center;padding:6px 8px;border-radius:9px;
+  border:1px solid var(--line);border-inline-start:3px solid color-mix(in srgb,var(--c) 45%,var(--line));
+  background:var(--panel);cursor:pointer;text-align:start}
+.step .info{position:absolute;top:4px;left:5px;width:14px;height:14px;border-radius:50%;
+  border:1px solid var(--muted);color:var(--muted);font:600 12px/13.5px var(--font-num);text-align:center;
+  cursor:help;background:var(--panel)}
+.step .info:hover{border-color:var(--c);color:var(--c)}
+.step{position:relative}
+#tip{position:fixed;z-index:50;max-width:260px;background:#1F2A33;color:#fff;font-size:13.5px;line-height:1.5;
+  padding:8px 11px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.28);pointer-events:none;direction:rtl}
+.step .num{grid-row:1/3;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--font-num);font-size:12.5px;font-weight:600;color:#fff;background:var(--c)}
+.step .ttl{font-size:14px;font-weight:500;color:var(--ink);line-height:1.2}
+.step .val{font-family:var(--font-num);font-size:12px;color:var(--muted);unicode-bidi:plaintext;line-height:1.3}
+.step.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--panel));
+  box-shadow:0 0 0 1px var(--c) inset}
+.step.on .ttl{color:var(--c)}
+.step.done .num::after{content:"✓";position:absolute;transform:translate(9px,-9px);font-size:10.5px;
+  background:var(--good);color:#fff;border-radius:50%;width:12px;height:12px;display:grid;place-items:center}
+.step.done .num{position:relative}
+.step:disabled{opacity:.42;cursor:default}
+#s0{--c:var(--c-range)} #s1{--c:var(--c-axes)} #s2{--c:var(--c-scale)}
+#s3{--c:var(--c-mass)} #s4{--c:var(--c-auto)}
+#s4.busy{background:var(--c-auto);border-color:var(--c-auto)}
+#s4.busy .ttl,#s4.busy .val{color:#fff}
+
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-top:8px;border-top:1px solid var(--line-soft)}
+.filebar{display:none;gap:6px;flex-wrap:wrap}
+.ctl{display:grid;gap:2px;justify-items:start}
+.ctl>span{font-size:11px;color:var(--muted);line-height:1.2}
+.ctl .row{display:flex;gap:3px;width:100%}
+.ctl input[type=number]{width:100%;padding:4px 6px;font-size:13.5px}
+.ctl select{width:100%}
+#fpsdet{padding:4px 6px;font-size:12.5px}
+[hidden]{display:none!important}
+.masses{position:absolute;top:6px;left:6px;z-index:5;direction:rtl;display:grid;gap:2px;justify-items:start}
+.mchips{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.mchip{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.92);
+  border:1px solid var(--line);border-radius:999px;padding:2px 7px;cursor:pointer;
+  box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.mchip.on{border-color:var(--mc);box-shadow:0 0 0 1.5px var(--mc),0 1px 4px rgba(0,0,0,.18)}
+.mchip .dot{width:8px;height:8px;border-radius:50%;background:var(--mc);flex:none}
+.mchip input.mname{border:none;background:transparent;font:500 12.5px var(--font-body);color:#14202A;
+  padding:0;width:52px;border-radius:4px}
+.mchip input.mname:focus{background:#fff;outline:1px solid var(--line)}
+.mchip .mdel{border:none;background:transparent;color:var(--muted);font-size:10.5px;padding:0;line-height:1}
+.mchip .medit{border:none;background:transparent;color:var(--muted);font-size:12.5px;padding:0 1px;line-height:1;cursor:pointer}
+.mchip .medit:hover{color:var(--ink)}
+.mchip input.mname[readonly]{cursor:pointer}
+.mchip input.mname:not([readonly]){background:#fff;outline:1.5px solid var(--mc)}
+.masses .addm{background:rgba(255,255,255,.92);border:1px dashed var(--line);border-radius:999px;
+  padding:2px 8px;font-size:12.5px;line-height:1.3;box-shadow:0 1px 4px rgba(0,0,0,.14)}
+.mcap{font-size:10.5px;color:#33424E;background:rgba(255,255,255,.8);border-radius:4px;padding:0 4px}
+.toast{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:5;pointer-events:none;
+  display:flex;align-items:center;gap:8px;max-width:92%;
+  background:rgba(255,255,255,.94);color:#7A2E12;border:1px solid var(--c-auto);
+  border-inline-start:4px solid var(--c-auto);border-radius:9px;padding:6px 10px;
+  font-size:14px;line-height:1.4;box-shadow:0 3px 12px rgba(0,0,0,.18)}
+.toast button{pointer-events:auto;border:none;background:transparent;color:var(--muted);
+  font-size:13.5px;padding:2px 4px;line-height:1}
+.cmenu{position:fixed;z-index:40;min-width:196px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;box-shadow:0 8px 26px rgba(20,32,42,.22);padding:5px;display:grid;gap:2px;
+  font-size:14px;line-height:1.2}
+.cmenu>button{width:100%;text-align:start;border:none;background:transparent;padding:7px 9px;border-radius:7px;font-size:14px}
+.cmenu>button.close{display:none}
+.cmenu.sheet>button.close{display:block}
+.cmenu>button:hover{background:var(--panel-2)}
+.cmenu .sep{height:1px;background:var(--line-soft);margin:3px 2px}
+.cmenu .crow{display:flex;align-items:center;gap:6px;padding:3px 9px;color:var(--muted);font-size:13px}
+.cmenu .crow input{width:64px;padding:3px 5px;font-size:13.5px}
+.cmenu .crow.qs{gap:3px;padding:2px 6px 5px}
+.swatches{display:flex;gap:3px;flex-wrap:wrap}
+.swatches i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer;display:inline-block}
+.swatches i.on{box-shadow:0 0 0 2px #fff,0 0 0 3px var(--ink)}
+#axcolor{width:22px;height:18px;padding:0;border:1px solid var(--line);border-radius:4px;background:none}
+.cmenu .crow.qs button{flex:1;padding:4px 0;font-size:13px;min-width:0}
+.cmenu.sheet{left:8px!important;right:8px;bottom:calc(64px + env(safe-area-inset-bottom));top:auto!important;
+  min-width:0;padding:8px;gap:4px;border-radius:14px;box-shadow:0 -6px 30px rgba(20,32,42,.28)}
+.cmenu.sheet>button{padding:12px 12px;font-size:17px}
+.cmenu.sheet .crow{font-size:15.5px;padding:6px 10px}
+.cmenu.sheet .crow input{font-size:17px;width:80px;padding:6px}
+.cmenu.sheet .crow.qs button{padding:9px 0;font-size:16px}
+.cmenu.sheet .swatches i{width:22px;height:22px}
+.cmenu.sheet .close{text-align:center;color:var(--muted);font-size:14.5px;padding:8px}
+.posbox{display:grid;gap:2px;padding-top:8px;border-top:1px solid var(--line-soft)}
+.posbox>span:first-child{font-size:11px;color:var(--muted)}
+.posbox .readout{font-size:13px;min-height:15px;direction:ltr;text-align:left}
+.readout b{font-weight:600}
+.deck .readout{min-width:150px;font-variant-numeric:tabular-nums}
+.helpbtn{background:var(--panel);border:1px solid var(--accent);color:var(--accent);font-weight:700}
+.helpbtn:hover{background:color-mix(in srgb,var(--accent) 10%,var(--panel));border-color:var(--accent)}
+.modal{position:fixed;inset:0;z-index:70;background:rgba(20,32,42,.45);display:grid;place-items:center;padding:18px}
+.hsheet{background:var(--panel);border-radius:16px;box-shadow:0 18px 60px rgba(20,32,42,.35);
+  width:min(760px,100%);max-height:min(88dvh,900px);display:grid;grid-template-rows:auto minmax(0,1fr) auto;direction:rtl}
+.hhead{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line-soft)}
+.hhead h2{margin:0;font-size:22px;font-weight:700;flex:1}
+.htabs{display:flex;gap:4px;background:var(--panel-2);border-radius:9px;padding:3px}
+.htabs button{border:none;background:transparent;border-radius:7px;padding:6px 12px;font-size:14px;color:var(--muted)}
+.htabs button.on{background:var(--panel);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.hx{border:none;background:transparent;font-size:18px;color:var(--muted);padding:4px 8px}
+.hbody{overflow:auto;padding:16px 18px;display:grid;gap:14px}
+.hstep{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+.hstep .n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px}
+.hstep h3{margin:0 0 3px;font-size:17px;font-weight:700}
+.hstep p{margin:0;font-size:16px;line-height:1.6;color:var(--ink)}
+.hkeys{border-top:1px solid var(--line-soft);padding-top:12px;display:grid;gap:7px}
+.hkeys h3{margin:0;font-size:17px}
+.hkeys div{font-size:16px;line-height:1.55}
+.hkeys b{font-family:var(--font-num);background:var(--panel-2);border:1px solid var(--line);
+  border-radius:6px;padding:1px 7px;font-weight:700}
+.hfoot{padding:12px 18px;border-top:1px solid var(--line-soft);text-align:start}
+.hfoot button{font-size:16px;padding:9px 22px;background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+@media (max-width:900px){
+  .modal{padding:0}
+  .hsheet{width:100%;max-height:100dvh;height:100dvh;border-radius:0}
+  .hhead h2{font-size:19px}
+  .hbody{padding:14px}
+  .hstep p,.hkeys div{font-size:16.5px}
+}
+.recorder{position:fixed;inset:0;z-index:60;background:#000;display:grid;grid-template-rows:minmax(0,1fr) auto auto}
+.recorder video{width:100%;height:100%;object-fit:contain;background:#000}
+.recbar{display:flex;justify-content:center;align-items:center;gap:28px;padding:14px 0 6px}
+.recbar button{width:52px;height:52px;border-radius:50%;border:2px solid #fff;background:rgba(255,255,255,.12);color:#fff;font-size:22px}
+.recbar button.rec{width:72px;height:72px;background:#E53935;border-color:#fff;font-size:30px}
+.recbar button.rec.on{background:#fff;color:#E53935;border-radius:14px}
+.rectime{text-align:center;color:#fff;font-size:14.5px;padding:0 0 calc(14px + env(safe-area-inset-bottom))}
+.zoomfab{display:none;position:absolute;right:8px;bottom:8px;z-index:6;flex-direction:column;gap:6px}
+.zoomfab button{width:40px;height:40px;border-radius:50%;font-size:22px;line-height:1;padding:0;
+  background:rgba(255,255,255,.92);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.22)}
+.hint{--c:var(--accent);margin:0;margin-top:auto;padding:8px 10px;font-size:13px;color:var(--ink);
+  background:color-mix(in srgb,var(--c) 8%,var(--panel));
+  border:1px solid color-mix(in srgb,var(--c) 28%,var(--line-soft));
+  border-inline-start:3px solid var(--c);border-radius:9px;line-height:1.5}
+.hint b{color:var(--c);font-weight:600}
+
+/* ---------- workspace ---------- */
+.main{display:grid;grid-template-columns:186px minmax(0,1.4fr) minmax(300px,1fr);gap:10px;min-height:0}
+.stage-col{display:grid;grid-template-rows:minmax(0,1fr);min-height:0;min-width:0}
+.stage-holder{display:grid;place-items:center;min-height:0;min-width:0}
+.stage-wrap{position:relative;background:var(--stagebg);border-radius:12px;overflow:hidden;
+  border:1px solid var(--line);line-height:0;width:100%;aspect-ratio:16/9;box-shadow:var(--shadow)}
+.scroller{position:absolute;inset:0;overflow:auto;direction:ltr;overscroll-behavior:contain;
+  scrollbar-width:auto;scrollbar-color:#B8C2C9 #FFFFFF}
+.scroller::-webkit-scrollbar,.tblwrap::-webkit-scrollbar,.rail::-webkit-scrollbar{width:12px;height:12px;background:#fff}
+.scroller::-webkit-scrollbar-track,.tblwrap::-webkit-scrollbar-track{background:#fff}
+.scroller::-webkit-scrollbar-thumb,.tblwrap::-webkit-scrollbar-thumb,.rail::-webkit-scrollbar-thumb{
+  background:#B8C2C9;border:3px solid #fff;border-radius:8px}
+.scroller::-webkit-scrollbar-thumb:hover,.tblwrap::-webkit-scrollbar-thumb:hover{background:#98A5AE}
+.scroller::-webkit-scrollbar-corner{background:#fff}
+.inner{position:relative;width:100%;line-height:0}
+#stage,#overlay{width:100%;height:auto;display:block}
+#overlay{position:absolute;top:0;left:0;cursor:crosshair;touch-action:none}
+.stage-wrap.drop{outline:3px dashed var(--accent);outline-offset:-3px}
+.drophint{position:absolute;inset:0;display:none;place-items:center;z-index:7;pointer-events:none;
+  background:rgba(255,255,255,.75);font-size:20px;font-weight:500;color:var(--accent)}
+.stage-wrap.drop .drophint{display:grid}
+#overlay.c-none{cursor:default}
+#overlay.c-mark{cursor:crosshair}
+#overlay.c-draw{cursor:cell}
+#overlay.c-grab{cursor:grab}
+#overlay.c-grabbing{cursor:grabbing}
+#overlay.c-text{cursor:text}
+#overlay.c-cross{cursor:crosshair}
+#overlay.c-rot{cursor:alias}
+#editlen{position:absolute;z-index:4;width:84px;transform:translate(-50%,-50%);text-align:center;
+  font-family:var(--font-num);background:#12241f;color:#2BE3B0;border:1.5px solid #2BE3B0;
+  border-radius:6px;padding:3px 5px;line-height:1.2}
+
+/* ---------- one compact deck ---------- */
+.deck{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+  border-radius:11px;box-shadow:var(--shadow);padding:6px 10px}
+.deck .cap{font-size:11.5px;color:var(--muted)}
+.btns{display:flex;gap:3px}
+.btns button{min-width:32px;text-align:center;font-size:14.5px;padding:4px 7px}
+#play{background:#3BA7F5;border-color:#3BA7F5;color:#fff;font-weight:600;min-width:44px}
+#play:hover{background:#2596E6;border-color:#2596E6}
+.timeline{direction:ltr;position:relative;height:38px;flex:1;min-width:140px;touch-action:none}
+.tl-track{position:absolute;left:9px;right:9px;top:7px;height:7px;border-radius:4px;background:var(--line-soft);
+  border:1px solid var(--line);cursor:pointer}
+.tl-range{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--c-range) 32%,transparent)}
+.tl-mark{position:absolute;top:-4px;width:2px;height:15px;background:var(--c-mass);opacity:.85;pointer-events:none}
+.tl-head{position:absolute;top:2px;width:12px;height:18px;margin-left:-6px;border-radius:4px;
+  background:var(--accent);border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);pointer-events:none}
+.tl-tri{position:absolute;top:19px;width:0;height:0;margin-left:-10px;
+  border-left:10px solid transparent;border-right:10px solid transparent;
+  border-bottom:13px solid var(--c-range);cursor:ew-resize;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.tl-tri::after{content:"";position:absolute;left:-14px;top:-10px;width:28px;height:30px}   /* hit zone */
+.tl-tri:hover{border-bottom-color:var(--accent)}
+.readout{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink);unicode-bidi:plaintext;white-space:nowrap}
+.readout.dim{color:var(--muted)}
+
+/* ---------- panel ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);
+  display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;overflow:hidden}
+.tabs{display:flex;gap:2px;padding:6px 8px 0;border-bottom:1px solid var(--line-soft)}
+.tabs button{border:none;background:transparent;border-radius:7px 7px 0 0;padding:5px 12px;color:var(--muted);font-size:14.5px}
+.tabs button.on{background:var(--panel-2);color:var(--ink);font-weight:500;box-shadow:inset 0 -2px 0 var(--accent)}
+.tabpane{display:none;min-height:0;padding:9px;gap:8px}
+#tab-graph.on{grid-template-rows:auto minmax(240px,1.15fr) auto auto minmax(80px,.85fr)}
+.tblhead{display:flex;align-items:flex-start;gap:6px}
+.tblhead .colpick{flex:1;min-width:0}
+.fsbtn{border:1px solid var(--line);background:var(--panel);border-radius:7px;font-size:13px;
+  padding:5px 9px;line-height:1.2;color:var(--ink);align-self:flex-end;white-space:nowrap}
+.fsbtn:hover{border-color:var(--accent)}
+.fsbtn.share{background:#25D366;border-color:#25D366;color:#fff;font-weight:600}
+.fsbtn.share:hover{background:#1FB958}
+/* one of them can take the whole pane */
+#tab-graph.big-chart{grid-template-rows:auto minmax(0,1fr) auto}
+#tab-graph.big-chart .tblhead,#tab-graph.big-chart .tblwrap{display:none}
+#tab-graph.big-table{grid-template-rows:auto minmax(0,1fr)}
+#tab-graph.big-table #chartbox,#tab-graph.big-table .result,#tab-graph.big-table .axisrow{display:none}
+#tab-graph.big-table .tblhead{display:flex}
+.fsbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+#tab-io.on{grid-template-rows:auto minmax(0,1fr) auto}
+.tabpane.on{display:grid}
+.axisrow{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+#chartbox{position:relative;min-height:0;min-width:0;background:var(--panel-2);border-radius:9px;border:1px solid var(--line-soft)}
+#chart{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:9px}
+.result{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:9px;padding:7px 10px;font-size:14px}
+.result .eq{font-family:var(--font-num);font-size:14px;color:var(--data);direction:ltr;text-align:left;word-break:break-word}
+.result .meta{color:var(--muted);font-size:12.5px;margin-top:3px;display:flex;gap:12px;flex-wrap:wrap}
+.result .phys{margin-top:5px;padding-top:5px;border-top:1px dashed var(--line);font-weight:500;font-size:13.5px}
+.colpick{font-size:13px;color:var(--muted);min-height:0}
+.colpick summary{cursor:pointer;padding:2px 0}
+#colchips{display:flex;flex-wrap:wrap;gap:4px;padding:6px 0 2px;max-height:88px;overflow:auto}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:12.5px;cursor:pointer;
+  background:var(--panel);color:var(--muted);white-space:nowrap;unicode-bidi:plaintext}
+.chip.on{color:#fff;border-color:transparent}
+.tblwrap{overflow:auto;border:1px solid var(--line-soft);border-radius:9px;min-height:0}
+table{border-collapse:collapse;width:100%;font-family:var(--font-num);font-variant-numeric:tabular-nums;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:4px 7px;text-align:center;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+td{direction:ltr}
+th{unicode-bidi:plaintext}
+thead th{position:sticky;top:0;background:var(--panel-2);color:var(--muted);font-weight:500;font-size:12px;z-index:1}
+tr.cur td{background:color-mix(in srgb, var(--accent) 14%, transparent)}
+textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;background:var(--panel-2);
+  color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:8px;direction:ltr;text-align:left;resize:none}
+.note{font-size:12.5px;color:var(--muted);line-height:1.5;margin:0}
+.iogrid{display:grid;gap:8px}
+.iocard{display:grid;gap:5px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:9px;background:var(--panel-2)}
+.iocard>b{font-size:13.5px;font-weight:600}
+.iocard button{text-align:start}
+
+/* ---------- phone: one thing at a time, thumbs first ---------- */
+@media (max-width:900px), (max-width:1024px) and (max-height:520px){
+  .app{height:auto;min-height:100dvh;overflow:visible;display:flex;flex-direction:column;gap:8px;
+    padding:6px 6px 70px;max-width:none}
+  .topbar{gap:8px}
+  .brand .sub,#srcname{display:none}
+  .brand h1{font-size:17px}
+  .filebtn.cam{display:inline-block}
+  .topbar #close{display:none}                 /* it lives in the settings tab on a phone */
+  .topbar{gap:6px;row-gap:4px}
+  .filebtn.primary,.topbar button{padding:7px 10px;font-size:13.5px}
+  .stage-col{order:1}
+  .stage-holder{height:56dvh}
+  .rail{order:3;overflow:visible;padding:7px;gap:7px}
+  .deck{order:2}
+  .main{display:contents!important}        /* stage, deck and rail become siblings so the deck can sit between */
+  .app>.deck{order:2}
+  .zoomfab{display:flex}
+  .steps{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:3px;scrollbar-width:none}
+  .steps::-webkit-scrollbar{display:none}
+  .step{min-width:132px;flex:none;padding:7px 8px 7px 10px}
+  .step .ttl{font-size:14px}
+  .settings,.posbox{display:none}
+  .hint{margin-top:0;font-size:13.5px;padding:6px 9px;max-height:3.4em;overflow:auto}
+  .step{min-width:126px}
+  .panel{display:none;order:4}
+  .deck{flex-wrap:wrap;gap:5px 6px;padding:6px 7px;justify-content:space-between}
+  .deck .btns{gap:3px}
+  .deck .btns button{min-width:34px;padding:7px 5px;font-size:14px}
+  .deck #play{min-width:42px}
+  .mnav{order:9}
+  .timeline{flex-basis:100%;order:-1;height:34px}
+  .tl-track{top:9px;height:9px}
+  .tl-head{width:16px;height:22px;margin-left:-8px;top:2px}
+  .tl-tri{top:22px;border-left-width:11px;border-right-width:11px;border-bottom-width:13px;margin-left:-11px}
+  .btns button{min-width:40px;padding:8px 9px;font-size:17px}
+  .deck .cap,.deck .zoomg{display:none}     /* zoom lives on the floating buttons over the frame */
+  .deck .readout{font-size:12px}
+  .deck .readout{min-width:0;font-size:12.5px}
+  /* bottom navigation */
+  .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--panel);
+    border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(20,32,42,.08);padding:4px 6px calc(4px + env(safe-area-inset-bottom))}
+  .mnav button{flex:1;border:none;background:transparent;display:grid;justify-items:center;gap:1px;
+    font-size:20px;padding:5px 0;color:var(--muted);border-radius:9px}
+  .mnav button span{font-size:12px;font-weight:500}
+  .mnav button.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent)}
+  /* the graph tab */
+  body[data-mtab="graph"] .stage-col,body[data-mtab="graph"] .rail,body[data-mtab="graph"] .deck{display:none}
+  body[data-mtab="graph"] .panel{display:grid;height:calc(100dvh - 130px)}
+  body[data-mtab="graph"] #tab-graph.on{grid-template-rows:auto minmax(200px,1fr) auto auto minmax(90px,.7fr)}
+  /* the settings tab */
+  body[data-mtab="settings"] .stage-col,body[data-mtab="settings"] .deck,body[data-mtab="settings"] .steps{display:none}
+  body[data-mtab="settings"] .settings{display:grid}
+  body[data-mtab="settings"] .posbox{display:grid}
+  body[data-mtab="settings"] .settings input[type=number]{font-size:17px;padding:7px 8px}
+  body[data-mtab="settings"] .ctl>span{font-size:12.5px}
+  /* bigger finger targets on the frame */
+  .mchip{padding:4px 9px}
+  .mchip input.mname{font-size:14px}
+  .cmenu{min-width:230px;font-size:16px}
+  .cmenu>button{padding:10px 11px;font-size:16px}
+  #editlen{width:96px;font-size:17px;padding:6px}
+  #editlen.sheet{position:fixed;left:50%;top:14px;transform:translateX(-50%);
+    width:150px;font-size:19px;padding:10px;z-index:40;box-shadow:0 8px 28px rgba(0,0,0,.28)}
+  select{font-size:16px;padding:7px 8px}
+}
+@media (max-width:1024px) and (max-height:520px) and (orientation:landscape){
+  /* phone held sideways: the frame fills the left, everything else lives in a column on the right */
+  .app{display:grid;grid-template-columns:minmax(0,1fr) 250px;grid-template-rows:minmax(0,1fr) auto;
+    gap:6px;padding:6px 6px calc(52px + env(safe-area-inset-bottom));height:100dvh;overflow:hidden}
+  .topbar{display:none}
+  .stage-col{grid-column:1;grid-row:1/3;order:0;min-height:0}
+  .stage-holder{height:100%;min-height:0}
+  .rail{grid-column:2;grid-row:1;order:0;overflow:auto;padding:5px;gap:5px;min-height:0}
+  .steps{flex-direction:column;gap:3px;overflow:visible}
+  .step{min-width:0;padding:3px 6px 3px 8px;grid-template-columns:18px 1fr;column-gap:6px}
+  .step .num{width:18px;height:18px;font-size:11.5px}
+  .step .ttl{font-size:12.5px}
+  .step .val{font-size:10.5px}
+  .step .info{top:2px;left:3px;width:12px;height:12px;font-size:9.5px;line-height:10px}
+  .hint{font-size:12.5px;padding:5px 7px;line-height:1.35;margin-top:2px;max-height:5.2em;overflow:auto}
+  .app>.deck{grid-column:2;grid-row:2;order:0;padding:5px 6px;gap:4px;flex-wrap:wrap;justify-content:center}
+  .timeline{height:30px;flex-basis:100%;order:-1;min-width:0}
+  .deck .readout,.deck #zoomTag,.deck .zoomg,.deck .cap{display:none}
+  .btns{gap:2px}
+  .btns button{min-width:28px;padding:5px 5px;font-size:13.5px}
+  #play{min-width:36px}
+  .cmenu.sheet{max-height:calc(100dvh - 60px);overflow:auto;bottom:calc(46px + env(safe-area-inset-bottom))}
+  .mnav{padding:2px 6px calc(2px + env(safe-area-inset-bottom))}
+  .mnav button{font-size:17px;padding:2px 0}
+  .mnav button span{font-size:11px}
+  /* graph tab: the panel takes the whole screen and scrolls */
+  body[data-mtab="graph"] .panel{display:block;grid-column:1/3;grid-row:1/3;height:auto;min-height:0;overflow:auto}
+  body[data-mtab="graph"] #tab-graph.on,body[data-mtab="graph"] #tab-io.on{display:flex;flex-direction:column;gap:6px;padding:8px}
+  body[data-mtab="graph"] #chartbox{height:210px;flex:none}
+  body[data-mtab="graph"] .axisrow{gap:5px}
+  body[data-mtab="graph"] .axisrow .ctl{min-width:0!important}
+  body[data-mtab="graph"] select{font-size:13.5px;padding:4px 5px}
+  body[data-mtab="graph"] .fsbtn{padding:4px 7px;font-size:12.5px}
+  body[data-mtab="graph"] .tblwrap{max-height:230px;flex:none}
+  body[data-mtab="graph"] #tab-graph.big-chart #chartbox{height:calc(100dvh - 150px)}
+  body[data-mtab="graph"] #tab-graph.big-table .tblwrap{max-height:none;height:calc(100dvh - 140px)}
+  body[data-mtab="graph"] textarea{height:160px}
+  /* settings tab: use the full width, and offer the file buttons here since the top bar is hidden */
+  body[data-mtab="settings"] .rail{grid-column:1/3;grid-row:1/3}
+  body[data-mtab="settings"] .settings{grid-template-columns:1fr 1fr 1fr 1fr;align-items:end}
+  body[data-mtab="settings"] .filebar{display:flex}
+  body[data-mtab="settings"] .app>.deck{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ================= step guide: a bobbing arrow with its instruction card ================= */
+#gpoint{position:fixed;z-index:61;pointer-events:none;font-size:36px;line-height:1;color:#FF3D7F;
+  text-shadow:0 2px 10px rgba(0,0,0,.35);animation:gbob 1s ease-in-out infinite}
+@keyframes gbob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,11px)}}
+#gpoint.up{animation:gbobu 1s ease-in-out infinite}
+@keyframes gbobu{0%,100%{transform:translate(-50%,0) rotate(180deg)}50%{transform:translate(-50%,-11px) rotate(180deg)}}
+.gtarget{outline:3px solid #FF3D7F!important;outline-offset:2px;animation:gring 1.25s ease-in-out infinite}
+@keyframes gring{0%,100%{box-shadow:0 0 0 0 rgba(255,61,127,.5)}50%{box-shadow:0 0 0 9px rgba(255,61,127,0)}}
+#gdemo{position:fixed;inset:0;z-index:58;pointer-events:none}
+#gdemo .gpath{position:absolute;height:3px;border-radius:2px;transform-origin:0 50%;opacity:.8;
+  background:repeating-linear-gradient(90deg,#FF3D7F 0 9px,transparent 9px 16px)}
+#gdemo .gfing{position:absolute;left:0;top:0;font-size:27px;filter:drop-shadow(0 2px 7px rgba(0,0,0,.4))}
+#gdemo .gnote{position:absolute;transform:translate(-50%,-50%);background:#FF3D7F;color:#fff;border-radius:9px;
+  padding:5px 9px;font:700 12.5px var(--font-body);white-space:nowrap;box-shadow:0 5px 16px rgba(0,0,0,.32)}
+#gsay{position:fixed;z-index:59;transform:translateX(-50%);background:rgba(20,32,42,.93);color:#fff;
+  border-radius:12px;padding:9px 14px;font:600 15px var(--font-body);line-height:1.35;text-align:center;
+  box-shadow:0 8px 26px rgba(0,0,0,.32);pointer-events:none;max-width:min(520px,88vw)}
+#gsay.good{background:rgba(14,107,79,.95)}
+.step .gfrom{cursor:pointer;font-size:12.5px;opacity:.7;margin-inline-start:3px}
+.step .gfrom:hover{opacity:1}
+#gtip.done .gttl{color:#8FE3C5}
+#gtip{position:fixed;z-index:60;width:min(310px,88vw);background:#14202A;color:#fff;border-radius:15px;
+  padding:12px 13px 11px;box-shadow:0 14px 42px rgba(0,0,0,.36);font:500 15px var(--font-body);
+  line-height:1.42;text-align:right}
+#gtip .ghead{display:flex;align-items:center;gap:7px;margin-bottom:5px;cursor:grab;touch-action:none}
+#gtip.dragging .ghead{cursor:grabbing}
+#gtip .ggrip{opacity:.55;font-size:14px;letter-spacing:-1px}
+.warn{background:#FFE8EF!important;border-color:#FF3D7F!important;color:#B4003C!important}
+#gtip .gnum{background:#FF3D7F;border-radius:7px;padding:2px 8px;font:700 12.5px var(--font-num);flex:none}
+#gtip .gttl{font:700 16px var(--font-display);flex:1}
+#gtip .gbody{font-size:14.8px;opacity:.95}
+#gtip .gdone{margin-top:7px;font-size:13.2px;color:#8FE3C5}
+#gtip .gfoot{display:flex;gap:7px;margin-top:11px;align-items:center}
+#gtip .gspace{flex:1}
+#gtip button{border:none;border-radius:10px;padding:9px 13px;font:700 14.8px var(--font-body);
+  cursor:pointer;background:#2979FF;color:#fff;flex:none}
+#gtip button.g2{background:rgba(255,255,255,.16);color:#fff;padding:9px 11px}
+#gask{position:fixed;z-index:62;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;color:var(--ink);
+  border:1px solid var(--line);border-radius:16px;padding:16px;width:min(430px,92vw);text-align:center;
+  box-shadow:0 20px 56px rgba(0,0,0,.3)}
+#gask h4{margin:0 0 6px;font:700 19px var(--font-display)}
+#gask p{margin:0 0 13px;color:var(--muted);font:400 14.5px var(--font-body);line-height:1.45}
+#gask .grow{display:flex;flex-direction:column;gap:8px}
+#gask button{border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;
+  background:var(--panel-2);color:var(--ink);font:700 16px var(--font-body)}
+#gask button.rec{background:#2979FF;border-color:#2979FF;color:#fff}
+@media (max-width:860px){ #gtip{width:min(330px,92vw);font-size:15.2px} #gtip .gbody{font-size:15px} }
+</style>
+
+<div class="app" lang="he">
+  <header class="topbar">
+    <div class="brand">
+      <h1>מעבדת וידאו</h1>
+      <span class="sub">ניתוח תנועה מסרטון</span>
+    </div>
+    <button id="guidebtn" class="helpbtn">🧭 מדריך שלב-שלב</button>
+    <button id="stuckbtn" class="helpbtn">🆘 נתקעתי</button>
+    <button id="helpbtn" class="helpbtn">❓ הוראות</button>
+    <span id="srcname">לא נטען סרטון</span>
+    <button class="filebtn primary cam" id="cambtn">📷 צילום</button>
+    <label class="filebtn cam" style="display:none"><input type="file" id="camfile" accept="video/*" capture="environment"></label>
+    <label class="filebtn primary">טעינת סרטון…<input type="file" id="file" accept="video/*"></label>
+    <button id="close" class="ghost" disabled>סגירת הסרטון</button>
+  </header>
+
+  <div class="main">
+    <aside class="rail">
+      <ol class="steps">
+        <li><button class="step" id="s0" disabled><span class="info" data-tip="גררו את שני המשולשים שמתחת לסרגל הזמן כדי לקבוע היכן התנועה מתחילה והיכן נגמרת. הניתוח, הניגון והמעקב האוטומטי יעבדו רק בתוך התחום.">i</span><span class="gfrom" data-guide="range" title="מדריך משלב זה">🧭</span><span class="num">0</span>
+          <span class="ttl">קבע תחום סרטון</span><span class="val" id="v0">—</span></button></li>
+        <li><button class="step" id="s1" disabled><span class="info" data-tip="לוחצים על הסרטון במקום שבו תשב ראשית הצירים. גרירת העיגול בקצה ציר מסובבת את המערכת; לחיצה ימנית (בטלפון: החזקה של שנייה וחצי על הצירים או על הסרגל) — סיבוב מדויק, היפוך כיוון חיובי, צבע ונעילה.">i</span><span class="gfrom" data-guide="axes" title="מדריך משלב זה">🧭</span><span class="num">1</span>
+          <span class="ttl">בחירת צירים</span><span class="val" id="v1">—</span></button></li>
+        <li><button class="step" id="s2" disabled><span class="info" data-tip="גררו את קצות הסרגל הירוק לשני קצות עצם שאורכו ידוע, ולחצו על התווית שעליו כדי להקליד את האורך במטרים.">i</span><span class="gfrom" data-guide="scale" title="מדריך משלב זה">🧭</span><span class="num">2</span>
+          <span class="ttl">קנה מידה</span><span class="val" id="v2">—</span></button></li>
+        <li><button class="step" id="s3" disabled><span class="info" data-tip="לוחצים על הגוף בכל פריים — הסרטון מתקדם לבד והנקודה נכנסת לגרף ולטבלה. לחיצה ימנית מוחקת נקודה, Ctrl+Z מבטל את האחרונה. מסה חדשה מוסיפים ב-+ שעל הסרטון.">i</span><span class="gfrom" data-guide="manual" title="מדריך משלב זה">🧭</span><span class="num">3</span>
+          <span class="ttl">מעקב ידני</span><span class="val" id="v3">0 נקודות</span></button></li>
+        <li><button class="step" id="s4" disabled><span class="info" data-tip="גררו מלבן סביב הגוף כך שמרכזו על הנקודה שרוצים לעקוב אחריה. התוכנה תמצא את אותה תבנית פיקסלים בכל הפריימים הבאים בתחום. חשוב: הצבע של הגוף צריך להיות שונה מהצבע של הרקע — גוף בצבע דומה לרקע התוכנה לא תצליח לזהות.">i</span><span class="gfrom" data-guide="auto" title="מדריך משלב זה">🧭</span><span class="num">4</span>
+          <span class="ttl">מעקב אוטומטי</span><span class="val" id="v4">בחירת תבנית</span></button></li>
+      </ol>
+
+      <div class="filebar">
+        <button class="filebtn primary" id="cambtn2">📷 צילום</button>
+        <button id="filebtn2">טעינת סרטון…</button>
+        <button id="close2" class="ghost">סגירת הסרטון</button>
+        <button id="guidebtn2" class="helpbtn">🧭 מדריך שלב-שלב</button>
+        <button id="stuckbtn2" class="helpbtn">🆘 נתקעתי</button>
+        <button id="helpbtn2" class="helpbtn">❓ הוראות</button>
+      </div>
+      <div class="settings">
+        <label class="ctl"><span>סיבוב צירים (°)</span><input type="number" id="ang" value="0" step="1"></label>
+        <label class="ctl"><span>אורך הסרגל (m)</span><input type="number" id="callen" value="1" step="0.01" min="0.001"></label>
+        <label class="ctl"><span>קצב פריימים</span><span class="row">
+          <input type="number" id="fps" value="30" step="0.01" min="1">
+          <button id="fpsdet" disabled title="מדידת קצב הפריימים מהקובץ">זהה</button></span></label>
+        <label class="ctl"><span>דילוג פריימים</span><input type="number" id="step" value="1" step="1" min="1"></label>
+        <div class="ctl" style="grid-column:1/3"><span>הנקודות שסומנו</span>
+          <button id="clear" class="ghost" style="width:100%">ניקוי הנקודות</button>
+          <button id="clearall" class="ghost" style="width:100%;margin-top:5px">🧹 ניקוי הכול (הסרטון נשאר)</button></div>
+      </div>
+
+      <div class="posbox"><span>מיקום הסמן</span><span class="readout" id="pos">—</span></div>
+      <p class="hint" id="hint"></p>
+    </aside>
+
+    <section class="stage-col">
+      <div class="stage-holder">
+        <div class="stage-wrap" id="wrap">
+          <div class="scroller" id="scroller"><div class="inner" id="inner">
+            <canvas id="stage" width="800" height="450"></canvas>
+            <canvas id="overlay" width="800" height="450"></canvas>
+          </div></div>
+          <div class="drophint" id="drophint">שחררו כאן את קובץ הסרטון</div>
+          <div class="zoomfab"><button id="fzin">+</button><button id="fzout">−</button><button id="fzrst">⤢</button></div>
+          <input type="number" id="editlen" step="0.01" min="0.001" hidden>
+          <div class="masses" id="masses"></div>
+          <div class="toast" id="toast" hidden><span id="toastmsg"></span><button id="toastx" title="סגירה">✕</button></div>
+          <div class="cmenu" id="cmenu" hidden>
+            <button data-act="del" class="m-gen">מחיקת הנקודה בפריים הזה</button>
+            <div class="sep m-gen"></div>
+            <div class="crow m-axes"><span>סיבוב הצירים</span>
+              <input type="number" id="cang" step="1" value="0"> °</div>
+            <div class="crow qs m-axes">
+              <button data-rot="0">0°</button><button data-rot="30">30°</button>
+              <button data-rot="45">45°</button><button data-rot="90">90°</button>
+              <button data-rot="-90">−90°</button>
+            </div>
+            <div class="sep m-axes"></div>
+            <div class="crow m-axes"><span>צבע הצירים</span>
+              <span class="swatches" id="axsw"></span>
+              <input type="color" id="axcolor" title="צבע אחר"></div>
+            <div class="crow qs m-axes"><button data-act="flipx">הפוך כיוון x</button><button data-act="flipy">הפוך כיוון y</button></div>
+            <button data-act="lock" class="m-axes m-gen">נעילת הצירים</button>
+            <button data-act="callock" class="m-cal m-gen">נעילת הסרגל</button>
+            <button data-act="reset" class="m-gen">איפוס הזום</button>
+            <button data-act="clearall" class="m-gen">🧹 ניקוי הכול (הסרטון נשאר)</button>
+            <button class="close" data-act="close">סגירה</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="tabs">
+        <button data-tab="graph" class="on">גרף וטבלה</button>
+        <button data-tab="io">ייצוא</button>
+      </div>
+
+      <div class="tabpane on" id="tab-graph">
+        <div class="axisrow">
+          <label class="ctl" style="min-width:118px"><span>ציר אנכי</span>
+            <select id="ysel">
+              <option value="x">x — מיקום אופקי (m)</option>
+              <option value="y" selected>y — מיקום אנכי (m)</option>
+              <option value="vx">vx (m/s)</option>
+              <option value="vy">vy (m/s)</option>
+              <option value="v">|v| (m/s)</option>
+              <option value="ax">ax (m/s²)</option>
+              <option value="ay">ay (m/s²)</option>
+            </select></label>
+          <label class="ctl" style="min-width:96px"><span>ציר אופקי</span>
+            <select id="xsel">
+              <option value="t">t — זמן (s)</option>
+              <option value="x" selected>x (m)</option>
+              <option value="y">y (m)</option>
+            </select></label>
+          <label class="ctl" style="min-width:86px"><span>מודל להתאמה</span>
+            <select id="model">
+              <option value="none">ללא</option>
+              <option value="lin">קווי</option>
+              <option value="quad" selected>פרבולי</option>
+              <option value="sin">סינוס</option>
+            </select></label>
+          <label class="ctl" style="min-width:96px"><span>מסה להתאמה</span>
+            <select id="msel"></select></label>
+          <button class="fsbtn" id="fschart" title="הגרף על כל הפאנל">⛶ הגדלת הגרף</button>
+          <button class="fsbtn share" id="sharebtn" data-tip="שיתוף הגרף והטבלה כתמונה (וואטסאפ וכו׳)">📤 שיתוף</button>
+        </div>
+        <div id="chartbox"><canvas id="chart"></canvas></div>
+        <div class="result" id="fitres">סמנו נקודות כדי לקבל התאמה.</div>
+        <div class="tblhead">
+          <details class="colpick" id="colpick"><summary>עמודות הטבלה</summary>
+            <div id="colchips"></div></details>
+          <button class="fsbtn" id="fstable" title="הטבלה על כל הפאנל">⛶ הגדלת הטבלה</button>
+        </div>
+        <div class="tblwrap">
+          <table id="tbl"><thead><tr></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div class="tabpane" id="tab-io">
+        <div class="iogrid">
+          <div class="iocard"><b>Excel</b>
+            <button id="dlxlsx">הורדת קובץ Excel (.xlsx)</button>
+            <button id="dlpng" class="ghost">הורדת הגרף כתמונה (PNG)</button>
+            <p class="note">הקובץ כולל גיליון עם הטבלה (העמודות שנבחרו) וגיליון עם המשוואה שהותאמה. הגרף יורד כתמונה נפרדת.</p>
+          </div>
+          <div class="iocard"><b>שיתוף (וואטסאפ, מייל…)</b>
+            <button id="shareimg">📤 שיתוף הגרף והטבלה כתמונה</button>
+            <button id="sharexlsx" class="ghost">📤 שיתוף קובץ Excel</button>
+            <p class="note">בטלפון נפתח חלון השיתוף של המכשיר; במחשב הקובץ יורד ואפשר לצרף אותו.</p>
+          </div>
+          <div class="iocard"><b>העתקה והדבקה</b>
+            <button id="copytsv">העתק טבלה — להדבקה ישירה באקסל</button>
+            <button id="copychart" class="ghost">העתק את הגרף כתמונה</button>
+            <button id="copycsv" class="ghost">העתק CSV</button>
+          </div>
+          <div class="iocard"><b>פרויקט</b>
+            <button id="copyjson" class="ghost">העתק פרויקט</button>
+            <button id="loadjson" class="ghost">טען פרויקט מהתיבה</button>
+          </div>
+        </div>
+        <textarea id="io" spellcheck="false" placeholder="כאן מופיע הטקסט שהועתק, וכאן מדביקים פרויקט לטעינה"></textarea>
+        <p class="note">בהורדה מופיעה בקשת אישור קצרה של הדפדפן; ההעתקה ללוח עובדת תמיד.</p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="recorder" id="recorder" hidden>
+    <video id="recprev" autoplay muted playsinline></video>
+    <div class="recbar">
+      <button id="recflip" data-tip="החלפת מצלמה">🔄</button>
+      <button id="recbtn" class="rec">●</button>
+      <button id="reccancel">✕</button>
+    </div>
+    <div class="rectime" id="rectime">מצלמה אחורית · לחצו ● להקלטה</div>
+  </div>
+
+  <div class="modal" id="help" hidden>
+    <div class="hsheet" role="dialog" aria-modal="true" aria-label="הוראות">
+      <header class="hhead">
+        <h2>איך מנתחים סרטון</h2>
+        <div class="htabs">
+          <button data-h="pc">💻 מחשב</button>
+          <button data-h="ph">📱 טלפון</button>
+        </div>
+        <button class="hx" id="helpx" title="סגירה">✕</button>
+      </header>
+      <div class="hbody" id="helpbody"></div>
+      <footer class="hfoot"><button id="helpclose">סגירה</button></footer>
+    </div>
+  </div>
+
+  <nav class="mnav">
+    <button data-m="video" class="on">🎬<span>סרטון</span></button>
+    <button data-m="graph">📈<span>גרף וטבלה</span></button>
+    <button data-m="settings">⚙<span>הגדרות</span></button>
+  </nav>
+
+  <div class="deck">
+    <span class="cap">ניווט</span>
+    <div class="btns">
+      <button id="first" data-tip="לתחילת התחום">⏮</button>
+      <button id="prev" data-tip="פריים אחורה">◀</button>
+      <button id="play" data-tip="נגן / עצור (רווח)">▶</button>
+      <button id="next" data-tip="פריים קדימה">▶|</button>
+      <button id="last" data-tip="לסוף התחום">⏭</button>
+      <button id="mute" data-tip="קול הסרטון (מושתק)">🔇</button>
+    </div>
+    <span class="cap">נקודות</span>
+    <div class="btns">
+      <button id="undobtn" data-tip="ביטול הנקודה האחרונה (Ctrl+Z)">↶</button>
+      <button id="clear2" data-tip="ניקוי כל הנקודות של המסה">🗑</button>
+    </div>
+    <div class="timeline" id="tl">
+      <div class="tl-track" id="tltrack">
+        <div class="tl-range" id="tlrange"></div>
+        <div class="tl-marks" id="tlmarks"></div>
+      </div>
+      <div class="tl-head" id="tlhead"></div>
+      <div class="tl-tri" id="tlin" title="תחילת התחום — גררו"></div>
+      <div class="tl-tri" id="tlout" title="סוף התחום — גררו"></div>
+    </div>
+    <span class="readout dim" id="tlnow">—</span>
+    <span class="readout"><b id="fno">0</b>/<span id="fmax">0</span> · <b id="tval">0.000</b>s · <b id="npts">0</b> נק׳</span>
+    <span class="cap zoomg">זום</span>
+    <div class="btns zoomg">
+      <button id="zout" data-tip="התרחקות">−</button>
+      <button id="zin" data-tip="התקרבות (גלגלת)">+</button>
+      <button id="zrst" data-tip="גודל מלא">⤢</button>
+    </div>
+    <span class="readout dim" id="zoomTag">×1.0</span>
+  </div>
+</div>
+
+<div id="gdemo" hidden><div class="gpath" id="gpath"></div>
+  <div class="gnote" id="gnoteA" hidden></div><div class="gnote" id="gnoteB" hidden></div>
+  <div class="gfing" id="gfing">&#9995;</div></div>
+<div id="gsay" hidden></div>
+<audio id="gaudio" preload="auto"></audio>
+<div id="gpoint" hidden>&#9660;</div>
+<div id="gtip" hidden role="dialog" aria-live="polite">
+  <div class="ghead" id="ghead"><span class="ggrip">⠿</span><span class="gnum" id="gnum">1</span><span class="gttl" id="gttl"></span></div>
+  <div class="gbody" id="gbody"></div>
+  <div class="gdone" id="gdone" hidden></div>
+  <div class="gfoot">
+    <button class="g2" id="gclose" title="סגירת המדריך">&#10005;</button>
+    <button class="g2" id="gsnd" title="הסבר קולי וצלילים">&#128266;</button>
+    <button class="g2" id="gsnap" title="החזרת החלונית למקומה" hidden>&#8634;</button>
+    <button class="g2" id="greplay" title="שמיעה שוב">&#9654;</button>
+    <span class="gspace"></span>
+    <button id="gnext">הבא &#8250;</button>
+  </div>
+</div>
+<div id="gask" hidden role="dialog" aria-modal="true">
+  <h4>איך תעדיפו לסמן את התנועה?</h4>
+  <p>במעקב ידני אתם לוחצים על הגוף בכל פריים — מדויק, ומראה לכם מה קורה בכל רגע.
+     במעקב אוטומטי התוכנה עוקבת לבד — מתאים כשהגוף בצבע שונה בבירור מהרקע.</p>
+  <div class="grow">
+    <button class="rec" id="gman">מעקב ידני — מומלץ</button>
+    <button id="gauto">מעקב אוטומטי</button>
+  </div>
+</div>
+
+<script src="xlsx.full.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const stage = $("#stage"), sctx = stage.getContext("2d");
+const ov = $("#overlay"), octx = ov.getContext("2d");
+const chart = $("#chart"), cctx = chart.getContext("2d");
+
+/* ---------- overlay ink (fixed colours, must read on any footage) ---------- */
+const INK = { mark:"#FF3D7F", path:"#FFD34E", cal:"#2BE3B0", axis:"#2979FF", tpl:"#FFB020" };
+const AXIS_COLORS=["#2979FF","#79D8FF","#FFFFFF","#111111","#FFD400","#FF3D7F","#2BE3B0","#FF7A00"];
+
+/* ---------- state ---------- */
+const st = {
+  kind:"none", fps:30, frames:1, frame:0, step:1, in:0, out:1,
+  scale:null,            // metres per pixel
+  cal:null,              // calibration stick {x1,y1,x2,y2} in canvas pixels
+  org:{x:80,y:400}, ang:0, fx:1, fy:1,   // fx/fy = +1 or -1: which way each axis counts positive
+  masses:[], sel:0,      // every mass carries its own points and its own template
+  cols:[],               // the table columns the user picked, as "massIndex:key"
+  mode:"mark", playing:false
+};
+const MCOL=["#FF3D7F","#0BA5E9","#F59E0B","#22C55E","#A855F7","#14B8A6"];
+const MNAME=["A","B","C","D","E","F"];
+const NOPTS=new Map();
+function M(){ return st.masses[st.sel] || null; }
+function P(){ const m=M(); return m ? m.pts : NOPTS; }
+const undo=[];
+function remember(mi,f){ const m=st.masses[mi]; undo.push({mi,f,prev:m.pts.get(f)||null}); if(undo.length>500) undo.shift(); }
+function undoLast(){
+  const u=undo.pop(); if(!u){ flash("אין מה לבטל"); return; }
+  const m=st.masses[u.mi]; if(!m) return;
+  if(u.prev) m.pts.set(u.f,u.prev); else m.pts.delete(u.f);
+  st.sel=u.mi; renderMasses(); goto(u.f); refresh();
+}
+function addMass(){
+  const i=st.masses.length;
+  st.masses.push({name:"מסה "+(MNAME[i]||(i+1)), color:MCOL[i%MCOL.length], pts:new Map(), tpl:null, tplData:null});
+  st.sel=i;
+  st.cols.push(i+":x", i+":y");
+  renderMasses(); refresh();
+  return st.masses[i];
+}
+
+/* ================= video source ================= */
+const video = document.createElement("video");
+video.muted = true; video.playsInline = true; video.preload="auto";
+video.style.cssText="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9px;top:-9px";
+document.body.appendChild(video);          // in the document so its audio track plays
+let seeking=false, wantSeek=false;
+video.addEventListener("seeked", ()=>{ seeking=false; drawStage(); if(wantSeek){wantSeek=false; applyFrame();} });
+
+function applyFrame(){
+  if(st.kind==="video"){
+    if(seeking){ wantSeek=true; return; }
+    seeking=true; video.currentTime = Math.min(video.duration-1e-4,(st.frame+0.5)/st.fps);
+  } else drawStage();
+}
+const view={z:1};                          // zoom = CSS size of the frame / its natural size
+const scroller=$("#scroller"), inner=$("#inner"), wrap=$("#wrap");
+function applyZoom(){
+  inner.style.width=(wrap.clientWidth*view.z)+"px";
+  $("#zoomTag").textContent="×"+view.z.toFixed(1);
+}
+function zoomAt(clientX,clientY,factor){     // keep the video point under the cursor where it is
+  const or=ov.getBoundingClientRect(), sr=scroller.getBoundingClientRect();
+  const vx=(clientX-or.left)*(ov.width/or.width), vy=(clientY-or.top)*(ov.height/or.height);
+  const px=clientX-sr.left, py=clientY-sr.top;
+  view.z=Math.max(1,Math.min(20,view.z*factor));
+  applyZoom();
+  const sc=(wrap.clientWidth*view.z)/ov.width;   // CSS px per video px
+  scroller.scrollLeft=vx*sc-px; scroller.scrollTop=vy*sc-py;
+  drawOverlay(); syncLabelEditor();
+}
+function resetView(){ view.z=1; applyZoom(); scroller.scrollLeft=scroller.scrollTop=0; drawOverlay(); }
+scroller.addEventListener("scroll",()=>{ syncLabelEditor(); closeMenu(); });
+function drawStage(){
+  if(st.kind==="video"){
+    sctx.fillStyle="#000"; sctx.fillRect(0,0,stage.width,stage.height);
+    try{ sctx.drawImage(video,0,0,stage.width,stage.height); }catch(e){}
+  } else emptyStage();
+  drawOverlay();
+}
+
+/* ================= geometry ================= */
+function nowTime(){                      // the frame's real timestamp, not an fps guess
+  return (st.kind==="video" && isFinite(video.currentTime)) ? video.currentTime : st.frame/st.fps;
+}
+function toWorld(px,py){
+  if(!st.scale) return null;
+  const dx=(px-st.org.x), dy=-(py-st.org.y), a=st.ang*Math.PI/180;
+  return { x:( dx*Math.cos(a)+dy*Math.sin(a))*st.scale*st.fx,
+           y:(-dx*Math.sin(a)+dy*Math.cos(a))*st.scale*st.fy };
+}
+function series(mi){
+  const pts = (mi===undefined) ? P() : (st.masses[mi] ? st.masses[mi].pts : NOPTS);
+  const keys=[...pts.keys()].sort((a,b)=>a-b);
+  if(!keys.length) return [];
+  const t0=pts.get(keys[0])?.t;
+  const rows=keys.map(f=>{ const p=pts.get(f), w=toWorld(p.x,p.y);
+    const t=(p.t!=null && t0!=null) ? p.t-t0 : (f-keys[0])/st.fps;
+    return { f, t, x:w?w.x:NaN, y:w?w.y:NaN, px:p.x, py:p.y }; });
+  for(let i=0;i<rows.length;i++){
+    if(i>0 && i<rows.length-1){
+      const dt=rows[i+1].t-rows[i-1].t; if(dt<=0) continue;
+      rows[i].vx=(rows[i+1].x-rows[i-1].x)/dt;
+      rows[i].vy=(rows[i+1].y-rows[i-1].y)/dt;
+      rows[i].v =Math.hypot(rows[i].vx,rows[i].vy);
+    }
+  }
+  for(let i=0;i<rows.length;i++){
+    if(i>1 && i<rows.length-2){
+      const dt=rows[i+1].t-rows[i-1].t;
+      if(dt<=0 || rows[i+1].vx===undefined || rows[i-1].vx===undefined) continue;
+      rows[i].ax=(rows[i+1].vx-rows[i-1].vx)/dt;
+      rows[i].ay=(rows[i+1].vy-rows[i-1].vy)/dt;
+    }
+  }
+  return rows;
+}
+
+/* ================= overlay ================= */
+// canvas pixels per CSS pixel — keeps handles, lines and text the same on-screen
+// size whatever the video's resolution (480p phone clip or 4K).
+function K(){
+  const w=ov.getBoundingClientRect().width;
+  return (w>0 && ov.width>0) ? ov.width/w : 1;
+}
+function KK(){ return K(); }                 // (the CSS size already includes the zoom)
+function drawOverlay(){
+  const k=K();
+  octx.clearRect(0,0,ov.width,ov.height);
+  // axes — a long cross through the origin, with handles that rotate it
+  if(st.kind!=="none"){
+    const a=st.ang*Math.PI/180;
+    const ux={x:st.fx*Math.cos(a), y:-st.fx*Math.sin(a)};     // +x on screen (flipped if fx=-1)
+    const uy={x:-st.fy*Math.sin(a), y:-st.fy*Math.cos(a)};    // +y on screen
+    const far=Math.hypot(ov.width,ov.height);
+    const L=Math.max(90*k, Math.min(ov.width,ov.height)*0.30);
+    octx.save();
+    octx.strokeStyle=INK.axis; octx.fillStyle=INK.axis;
+    octx.lineWidth=1*k; octx.setLineDash([8*k,7*k]); octx.globalAlpha=.5;
+    [ux,uy].forEach(u=>{                                // dashed guides across the frame
+      octx.beginPath();
+      octx.moveTo(st.org.x-u.x*far, st.org.y-u.y*far);
+      octx.lineTo(st.org.x+u.x*far, st.org.y+u.y*far);
+      octx.stroke();
+    });
+    octx.setLineDash([]); octx.globalAlpha=1; octx.lineWidth=2*k;
+    arrow(octx, st.org.x, st.org.y, st.org.x+ux.x*L, st.org.y+ux.y*L, k);
+    arrow(octx, st.org.x, st.org.y, st.org.x+uy.x*L, st.org.y+uy.y*L, k);
+    octx.font="600 "+(15*k)+"px Arial, sans-serif";
+    octx.fillText("x", st.org.x+ux.x*(L+15*k)-4*k, st.org.y+ux.y*(L+15*k)+4*k);
+    octx.fillText("y", st.org.x+uy.x*(L+15*k)-4*k, st.org.y+uy.y*(L+15*k)+4*k);
+    octx.beginPath(); octx.arc(st.org.x,st.org.y,4*k,0,7); octx.fill();
+    octx.lineWidth=1.4*k; octx.beginPath(); octx.arc(st.org.x,st.org.y,9*k,0,7); octx.stroke();
+    st.axH={ x:{x:st.org.x+ux.x*L, y:st.org.y+ux.y*L}, y:{x:st.org.x+uy.x*L, y:st.org.y+uy.y*L} };
+    if(!st.locked){
+      [st.axH.x, st.axH.y].forEach(h=>{
+        octx.beginPath(); octx.arc(h.x,h.y,7*k,0,7);
+        octx.fillStyle=INK.axis; octx.globalAlpha=.35; octx.fill(); octx.globalAlpha=1;
+        octx.lineWidth=1.8*k; octx.strokeStyle=INK.axis; octx.stroke();
+      });
+    }
+    octx.direction="ltr"; octx.fillStyle=INK.axis;
+    octx.font="600 "+(14*k)+"px Arial, sans-serif";
+    octx.fillText((st.locked?"🔒 ":"")+st.ang.toFixed(1)+"°", st.org.x+11*k, st.org.y-11*k);
+    octx.restore();
+  }
+  // calibration
+  if(st.cal){
+    const c=st.cal, a=Math.atan2(c.y2-c.y1,c.x2-c.x1), nx=-Math.sin(a), ny=Math.cos(a);
+    octx.strokeStyle="rgba(0,0,0,.55)"; octx.lineWidth=5*k; octx.setLineDash([]);
+    octx.beginPath(); octx.moveTo(c.x1,c.y1); octx.lineTo(c.x2,c.y2); octx.stroke();
+    octx.strokeStyle=INK.cal; octx.lineWidth=2.4*k;
+    octx.beginPath(); octx.moveTo(c.x1,c.y1); octx.lineTo(c.x2,c.y2); octx.stroke();
+    [[c.x1,c.y1],[c.x2,c.y2]].forEach(([x,y])=>{          // end caps + grab handles
+      octx.beginPath(); octx.moveTo(x-nx*8*k,y-ny*8*k); octx.lineTo(x+nx*8*k,y+ny*8*k); octx.stroke();
+      octx.beginPath(); octx.arc(x,y,6*k,0,7);
+      octx.fillStyle="rgba(43,227,176,.28)"; octx.fill();
+      octx.lineWidth=1.6*k; octx.strokeStyle=INK.cal; octx.stroke(); octx.lineWidth=2.4*k;
+    });
+    const mxp=(c.x1+c.x2)/2, myp=(c.y1+c.y2)/2;
+    const label=(+$("#callen").value)+" m";
+    octx.font="600 "+(15*k)+"px Arial, sans-serif";
+    octx.textAlign="center"; octx.textBaseline="middle"; octx.direction="ltr";
+    const wlab=octx.measureText(label).width+14*k, hlab=20*k;
+    st.labelBox={x:mxp-wlab/2, y:myp-30*k, w:wlab, h:hlab};
+    octx.fillStyle="rgba(0,0,0,.62)"; octx.fillRect(st.labelBox.x, st.labelBox.y, wlab, hlab);
+    octx.strokeStyle="rgba(43,227,176,.5)"; octx.lineWidth=1*k;
+    octx.strokeRect(st.labelBox.x, st.labelBox.y, wlab, hlab);
+    octx.fillStyle=INK.cal; octx.fillText(label, mxp, myp-20*k);
+    if(st.calLocked){ octx.font=(14*k)+"px Arial, sans-serif"; octx.fillText("🔒", mxp, myp+16*k); }
+    octx.textAlign="left"; octx.textBaseline="alphabetic";
+  } else st.labelBox=null;
+  // auto-track selection box
+  if(st.tpl){
+    const t=st.tpl, cx=t.x+t.w/2, cy=t.y+t.h/2;
+    octx.setLineDash([6*k,4*k]); octx.strokeStyle=INK.tpl; octx.lineWidth=1.6*k;
+    octx.strokeRect(t.x,t.y,t.w,t.h); octx.setLineDash([]);
+    octx.beginPath(); octx.moveTo(cx-7*k,cy); octx.lineTo(cx+7*k,cy);
+    octx.moveTo(cx,cy-7*k); octx.lineTo(cx,cy+7*k); octx.stroke();
+  }
+  // every mass: its path and its marks, in its own colour
+  st.masses.forEach((mass,mi)=>{
+    const keys=[...mass.pts.keys()].sort((a,b)=>a-b);
+    if(!keys.length) return;
+    const on = mi===st.sel;
+    octx.globalAlpha = on ? 1 : .55;
+    if(keys.length>1){
+      octx.strokeStyle=mass.color; octx.lineWidth=1.3*k; octx.setLineDash([5*k,4*k]); octx.beginPath();
+      keys.forEach((f,i)=>{ const p=mass.pts.get(f); i?octx.lineTo(p.x,p.y):octx.moveTo(p.x,p.y); });
+      octx.stroke(); octx.setLineDash([]);
+    }
+    keys.forEach(f=>{
+      const p=mass.pts.get(f), cur=(f===st.frame);
+      octx.strokeStyle=mass.color; octx.lineWidth=(cur?2.4:1.5)*k;
+      octx.beginPath(); octx.arc(p.x,p.y,(cur?8:4.5)*k,0,7); octx.stroke();
+      if(cur){
+        octx.beginPath(); octx.moveTo(p.x-9*k,p.y); octx.lineTo(p.x+9*k,p.y);
+        octx.moveTo(p.x,p.y-9*k); octx.lineTo(p.x,p.y+9*k);
+        octx.lineWidth=1*k; octx.stroke();
+      }
+    });
+    octx.globalAlpha=1;
+  });
+}
+function arrow(c,x1,y1,x2,y2,k){
+  c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke();
+  const a=Math.atan2(y2-y1,x2-x1), h=9*(k||1);
+  c.beginPath(); c.moveTo(x2,y2);
+  c.lineTo(x2-h*Math.cos(a-.4), y2-h*Math.sin(a-.4));
+  c.lineTo(x2-h*Math.cos(a+.4), y2-h*Math.sin(a+.4));
+  c.closePath(); c.fill();
+}
+
+/* ================= pointer interaction ================= */
+function evPos(e){                          // -> video pixels (the rect already reflects zoom + scroll)
+  const r=ov.getBoundingClientRect();
+  return { x:(e.clientX-r.left)*(ov.width/r.width), y:(e.clientY-r.top)*(ov.height/r.height),
+           cx:e.clientX, cy:e.clientY };
+}
+let drag=null;                     // {what:'p1'|'p2'|'stick'|'org', dx, dy}
+function near(p,x,y){ return Math.hypot(p.x-x,p.y-y) < (COARSE?20:11)*KK(); }
+function nearSegment(p,c){
+  const vx=c.x2-c.x1, vy=c.y2-c.y1, L2=vx*vx+vy*vy; if(!L2) return false;
+  let t=((p.x-c.x1)*vx+(p.y-c.y1)*vy)/L2; t=Math.max(0,Math.min(1,t));
+  return Math.hypot(p.x-(c.x1+t*vx), p.y-(c.y1+t*vy)) < (COARSE?16:9)*KK();
+}
+function inBox(p,b){ return b && p.x>=b.x && p.x<=b.x+b.w && p.y>=b.y && p.y<=b.y+b.h; }
+function menuContext(p){            // "cal" on the stick, "axes" on the axes, else null — locks ignored
+  const c=st.cal;
+  if(inBox(p,st.labelBox)) return "cal";
+  if(c && (near(p,c.x1,c.y1) || near(p,c.x2,c.y2) || nearSegment(p,c))) return "cal";
+  if(near(p,st.org.x,st.org.y)) return "axes";
+  if(st.axH && (near(p,st.axH.x.x,st.axH.x.y) || near(p,st.axH.y.x,st.axH.y.y))) return "axes";
+  const a=st.ang*Math.PI/180, far=Math.hypot(ov.width,ov.height);
+  for(const u of [{x:Math.cos(a),y:-Math.sin(a)},{x:-Math.sin(a),y:-Math.cos(a)}]){
+    const seg={x1:st.org.x-u.x*far,y1:st.org.y-u.y*far,x2:st.org.x+u.x*far,y2:st.org.y+u.y*far};
+    if(nearSegment(p,seg)) return "axes";
+  }
+  return null;
+}
+function hitTest(p){                // handles are grabbable in every mode
+  const c=st.cal;
+  if(inBox(p,st.labelBox)) return "label";
+  if(c && !st.calLocked){
+    if(near(p,c.x1,c.y1)) return "p1";
+    if(near(p,c.x2,c.y2)) return "p2";
+    if(nearSegment(p,c))  return "stick";
+  }
+  if(!st.locked && st.axH){
+    if(near(p,st.axH.x.x,st.axH.x.y)) return "rotX";
+    if(near(p,st.axH.y.x,st.axH.y.y)) return "rotY";
+  }
+  if(!st.locked && near(p,st.org.x,st.org.y)) return "org";
+  return null;
+}
+const COARSE = window.matchMedia && matchMedia("(pointer:coarse)").matches;
+function isPhone(){ return window.innerWidth<=900 || (window.innerWidth<=1024 && window.innerHeight<=520); }
+const touches=new Map(); let pinch=null, pressT=0;
+function tapAction(p){                         // what a plain click / tap does in the current mode
+  if(st.mode==="org"){
+    if(st.locked){ flash("הצירים נעולים — שחררו בתפריט (לחיצה ימנית / לחיצה ארוכה)"); return; }
+    st.org={x:p.x,y:p.y}; st.orgSet=true; refresh();
+  }
+  else if(st.mode==="mark"){
+    if(!M()) addMass();
+    remember(st.sel,st.frame);
+    P().set(st.frame,{x:p.x,y:p.y,t:nowTime()});
+    goto(st.frame+st.step); refresh();
+  }
+}
+ov.addEventListener("pointerdown",e=>{
+  if(e.button===2 || st.kind==="none") return;
+  const p=evPos(e);
+  closeMenu();
+  if(e.pointerType==="touch"){
+    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(touches.size===2){                    // second finger: pinch-zoom, whatever was going on
+      clearTimeout(pressT); drag=null;
+      const [a,b]=[...touches.values()];
+      pinch={d:Math.hypot(a.x-b.x,a.y-b.y)};
+      return;
+    }
+  }
+  if(e.button===1 || e.altKey){              // pan the zoomed frame
+    e.preventDefault(); drag={what:"pan", cx:p.cx, cy:p.cy};
+    ov.setPointerCapture(e.pointerId); setCursor(p); return;
+  }
+  if(st.mode==="sel"){                       // drag the tracking box
+    st.tpl={x:p.x,y:p.y,w:0,h:0,x0:p.x,y0:p.y};
+    drag={what:"sel"}; ov.setPointerCapture(e.pointerId); drawOverlay(); return;
+  }
+  const hit=hitTest(p);
+  if(hit==="label"){ e.preventDefault(); openLabelEditor(); return; }
+  if(hit){
+    drag={what:hit, dx:p.x, dy:p.y, x0:e.clientX, y0:e.clientY};
+    ov.setPointerCapture(e.pointerId);
+    if(e.pointerType==="touch"){                 // holding a handle still: the axes menu
+      clearTimeout(pressT);
+      pressT=setTimeout(()=>{ if(drag && !drag.movedFar){ drag=null; openMenu({clientX:e.clientX,clientY:e.clientY}); } },1500);
+    }
+    return;
+  }
+  if(st.mode==="cal"){                       // draw a new stick
+    if(st.calLocked){ flash("הסרגל נעול — שחררו בתפריט"); return; }
+    st.cal={x1:p.x,y1:p.y,x2:p.x,y2:p.y};
+    drag={what:"p2"}; ov.setPointerCapture(e.pointerId); commitCal(); drawOverlay();
+    return;
+  }
+  if(e.pointerType==="touch"){
+    // a finger on empty frame (or on the locked origin): a tap acts, a drag pans, a long press opens the menu
+    drag={what:"touch", cx:e.clientX, cy:e.clientY, x0:e.clientX, y0:e.clientY, moved:false, p, t:Date.now()};
+    ov.setPointerCapture(e.pointerId);
+    clearTimeout(pressT);
+    pressT=setTimeout(()=>{ if(drag && drag.what==="touch" && !drag.moved){ drag=null; openMenu({clientX:e.clientX,clientY:e.clientY}); } },1500);
+    return;
+  }
+  tapAction(p);
+});
+ov.addEventListener("pointermove",e=>{
+  const p=evPos(e);
+  if(e.pointerType==="touch" && touches.has(e.pointerId)) touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch && touches.size===2){
+    const [a,b]=[...touches.values()], d=Math.hypot(a.x-b.x,a.y-b.y);
+    if(d>0 && pinch.d>0) zoomAt((a.x+b.x)/2,(a.y+b.y)/2, d/pinch.d);
+    pinch.d=d; return;
+  }
+  if(drag){
+    if(drag.what==="touch"){
+      if(!drag.moved && Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)>6){ drag.moved=true; clearTimeout(pressT); }
+      if(drag.moved){ scroller.scrollLeft-=(e.clientX-drag.cx); scroller.scrollTop-=(e.clientY-drag.cy); }
+      drag.cx=e.clientX; drag.cy=e.clientY; return;
+    }
+    if(drag.what==="pan"){
+      scroller.scrollLeft-=(p.cx-drag.cx); scroller.scrollTop-=(p.cy-drag.cy);
+      drag.cx=p.cx; drag.cy=p.cy; return;
+    }
+    if(drag.what==="sel"){
+      const t=st.tpl;
+      t.x=Math.min(t.x0,p.x); t.y=Math.min(t.y0,p.y);
+      t.w=Math.abs(p.x-t.x0); t.h=Math.abs(p.y-t.y0);
+      drawOverlay(); return;
+    }
+    if(drag.x0!==undefined && !drag.movedFar && Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)>6){ drag.movedFar=true; clearTimeout(pressT); }
+    const c=st.cal;
+    if(drag.what==="p1"){ c.x1=p.x; c.y1=p.y; commitCal(); }
+    else if(drag.what==="p2"){ c.x2=p.x; c.y2=p.y; commitCal(); }
+    else if(drag.what==="stick"){
+      const dx=p.x-drag.dx, dy=p.y-drag.dy;
+      c.x1+=dx; c.y1+=dy; c.x2+=dx; c.y2+=dy; drag.dx=p.x; drag.dy=p.y;
+    }
+    else if(drag.what==="org"){ st.org={x:p.x,y:p.y}; st.orgSet=true; }
+    else if(drag.what==="rotX" || drag.what==="rotY"){   // either handle turns the whole system
+      let a=-Math.atan2(p.y-st.org.y, p.x-st.org.x)*180/Math.PI;
+      if(drag.what==="rotX"){ if(st.fx<0) a-=180; }
+      else { a-= (st.fy>0 ? 90 : -90); }
+      a=((a+180)%360+360)%360-180;
+      [0,90,-90,180,-180].forEach(v=>{ if(Math.abs(a-v)<2) a=v; });   // gentle snap
+      st.ang=+a.toFixed(1); $("#ang").value=st.ang; st.orgSet=true;
+    }
+    drawOverlay(); tagScale();
+  }
+  setCursor(p);
+  readout(p);
+});
+ov.addEventListener("wheel",e=>{
+  if(st.kind==="none") return;
+  e.preventDefault();
+  zoomAt(e.clientX,e.clientY, Math.exp(-e.deltaY*0.0016));
+  const p=evPos(e); setCursor(p); readout(p);
+},{passive:false});
+function endPointer(e){
+  if(e && e.pointerType==="touch"){ touches.delete(e.pointerId); if(touches.size<2) pinch=null; }
+  clearTimeout(pressT);
+  if(drag && drag.what==="touch"){
+    const d=drag; drag=null;
+    if(!d.moved && Date.now()-d.t<600) tapAction(d.p);
+    return;
+  }
+  if(drag && drag.what==="sel"){ drag=null; startAutoTrack(); setCursor(null); return; }
+  if(drag){ drag=null; commitCal(); refresh(); }
+  setCursor(null);
+}
+ov.addEventListener("pointerup",endPointer);
+ov.addEventListener("pointercancel",endPointer);
+ov.addEventListener("pointerleave",()=>{ $("#pos").textContent="—"; });
+const cmenu=$("#cmenu");
+function openMenu(e){
+  if(st.kind==="none") return;
+  const r0=ov.getBoundingClientRect();
+  const vp={x:(e.clientX-r0.left)*(ov.width/r0.width), y:(e.clientY-r0.top)*(ov.height/r0.height)};
+  const ctx=menuContext(vp) || "gen";
+  cmenu.querySelectorAll(".m-gen,.m-axes,.m-cal").forEach(el=>{ el.hidden=!el.classList.contains("m-"+ctx); });
+  cmenu.hidden=false;
+  if(isPhone()){                                     // phone: a sheet at the bottom, never clipped
+    cmenu.classList.add("sheet"); cmenu.style.left=cmenu.style.top="";
+  } else {
+    cmenu.classList.remove("sheet");
+    const mw=cmenu.offsetWidth||220, mh=cmenu.offsetHeight||260;
+    cmenu.style.left=Math.max(4,Math.min(e.clientX, window.innerWidth-mw-6))+"px";
+    cmenu.style.top =Math.max(4,Math.min(e.clientY, window.innerHeight-mh-6))+"px";
+  }
+  $("#cang").value=st.ang;
+  $("#axsw").innerHTML=AXIS_COLORS.map(c=>'<i style="background:'+c+'" data-col="'+c+'" class="'+(c===INK.axis?'on':'')+'"></i>').join("");
+  $("#axcolor").value=INK.axis;
+  cmenu.querySelector('[data-act="lock"]').textContent = st.locked ? "שחרור הצירים" : "נעילת הצירים";
+  cmenu.querySelector('[data-act="callock"]').textContent = st.calLocked ? "שחרור הסרגל" : "נעילת הסרגל";
+  cmenu.querySelector('[data-act="del"]').disabled = !P().has(st.frame);
+}
+function closeMenu(){ cmenu.hidden=true; }
+ov.addEventListener("contextmenu",e=>{ e.preventDefault(); if(e.pointerType!=="touch") openMenu(e); });
+document.addEventListener("pointerdown",e=>{ if(!cmenu.hidden && !cmenu.contains(e.target)) closeMenu(); },true);
+cmenu.addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.rot!==undefined){ setAngle(+b.dataset.rot); closeMenu(); return; }
+  const act=b.dataset.act;
+  if(act==="del"){ remember(st.sel,st.frame); if(P().delete(st.frame)) refresh(); }
+  else if(act==="flipx"){ st.fx=-st.fx; refresh(); }
+  else if(act==="flipy"){ st.fy=-st.fy; refresh(); }
+  else if(act==="lock"){ st.locked=!st.locked; flash(st.locked?"הצירים ננעלו":"הצירים שוחררו"); refresh(); }
+  else if(act==="callock"){ st.calLocked=!st.calLocked; flash(st.calLocked?"הסרגל ננעל":"הסרגל שוחרר"); refresh(); }
+  else if(act==="reset"){ resetView(); }
+  else if(act==="clearall"){ closeMenu(); clearAll(); return; }
+  closeMenu();
+});
+$("#axsw").addEventListener("click",e=>{ const i=e.target.closest("[data-col]"); if(!i) return;
+  INK.axis=i.dataset.col; $("#axsw").querySelectorAll("i").forEach(x=>x.classList.toggle("on",x===i)); drawOverlay(); });
+$("#axcolor").addEventListener("input",e=>{ INK.axis=e.target.value; drawOverlay(); });
+$("#cang").addEventListener("input",()=>setAngle(+$("#cang").value||0));
+$("#cang").addEventListener("keydown",e=>{ if(e.key==="Enter"){ closeMenu(); e.preventDefault(); } e.stopPropagation(); });
+function setAngle(a){
+  st.ang=+(+a).toFixed(1);
+  $("#ang").value=st.ang; $("#cang").value=st.ang; refresh();
+}
+
+function commitCal(){
+  if(!st.cal){ st.scale=null; return tagScale(); }
+  const c=st.cal, d=Math.hypot(c.x2-c.x1,c.y2-c.y1);
+  const len=+$("#callen").value;
+  st.scale = (d>4 && len>0) ? len/d : null;
+  tagScale();
+}
+function tagScale(){
+  const d = st.cal ? Math.hypot(st.cal.x2-st.cal.x1, st.cal.y2-st.cal.y1) : 0;
+  $("#v2").textContent = st.scale
+    ? (+$("#callen").value)+" m = "+d.toFixed(0)+" px"
+    : "טרם הוגדר";
+}
+function setCursor(p){
+  const cls = st.kind==="none" ? "c-none"
+    : drag ? "c-grabbing"
+    : (p && hitTest(p)==="label") ? "c-text"
+    : (p && /^rot/.test(hitTest(p)||"")) ? "c-rot"
+    : (p && hitTest(p)) ? "c-grab"
+    : st.mode==="mark" ? "c-mark"
+    : st.mode==="sel" ? "c-cross" : "c-draw";
+  ov.className = cls;
+}
+function readout(p){
+  if(!p || st.kind==="none"){ $("#pos").textContent="—"; return; }
+  const w=toWorld(p.x,p.y);
+  $("#pos").textContent = w ? "x "+w.x.toFixed(3)+"  y "+w.y.toFixed(3)+" m"
+                            : Math.round(p.x)+" · "+Math.round(p.y)+" px";
+}
+
+let labelEditing=false, labelOpenedAt=0;
+function positionLabelEditor(){
+  const ed=$("#editlen"), b=st.labelBox; if(!b) return;
+  if(isPhone()){ ed.classList.add("sheet"); ed.style.left=""; ed.style.top=""; return; }
+  ed.classList.remove("sheet");
+  const k=K(), or=ov.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
+  ed.style.left=(or.left-wr.left+(b.x+b.w/2)/k)+"px";
+  ed.style.top =(or.top-wr.top+(b.y+b.h/2)/k)+"px";
+}
+/* a scroll, a zoom or the soft keyboard resizing the window must MOVE the editor, never close it */
+function syncLabelEditor(){ if(labelEditing) positionLabelEditor(); else closeLabelEditor(false); }
+function openLabelEditor(){
+  if(!st.cal) return;
+  const ed=$("#editlen");
+  ed.hidden=false; labelEditing=true; labelOpenedAt=Date.now();
+  positionLabelEditor();
+  ed.value=+$("#callen").value;
+  requestAnimationFrame(()=>{
+    try{ ed.focus({preventScroll:true}); }catch(err){ ed.focus(); }
+    try{ ed.select(); }catch(err){}
+  });
+}
+function closeLabelEditor(apply){
+  const ed=$("#editlen");
+  labelEditing=false;
+  if(ed.hidden) return;
+  if(apply){ const v=+ed.value; if(v>0){ $("#callen").value=v; commitCal(); refresh(); } }
+  ed.hidden=true; ed.classList.remove("sheet");
+}
+$("#editlen").addEventListener("input",()=>{
+  const v=+$("#editlen").value; if(v>0){ $("#callen").value=v; commitCal(); drawOverlay(); }
+});
+$("#editlen").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){ closeLabelEditor(true); e.preventDefault(); }
+  if(e.key==="Escape"){ closeLabelEditor(false); }
+  e.stopPropagation();
+});
+$("#editlen").addEventListener("blur",()=>{
+  if(labelEditing && Date.now()-labelOpenedAt<700){   // the keyboard appearing stole the focus
+    requestAnimationFrame(()=>{ const ed=$("#editlen");
+      if(labelEditing && !ed.hidden){ try{ ed.focus({preventScroll:true}); }catch(err){} } });
+    return;
+  }
+  closeLabelEditor(true);
+});
+
+function closeVideo(){
+  if(st.playing) togglePlay();
+  try{ video.pause(); }catch(e){}
+  if(video.src){ URL.revokeObjectURL(video.src); video.removeAttribute("src"); video.load(); }
+  tracking=false; setAutoUI(false);
+  st.kind="none"; st.masses=[]; st.sel=0; st.cols=[]; undo.length=0; renderMasses();
+  st.cal=null; st.scale=null; st.labelBox=null; st.orgSet=false;
+  st.tpl=null; st.tplData=null; st.locked=false; st.calLocked=false; resetView();
+  $("#fpsdet").disabled=true;
+  st.frames=1; st.frame=0; st.ang=0; st.fx=1; st.fy=1; $("#ang").value=0;
+  stage.width=ov.width=800; stage.height=ov.height=450;
+  $("#wrap").style.aspectRatio="16/9"; sizeWrap();
+  ["s0","s1","s2","s3","s4"].forEach(id=>{ $("#"+id).disabled=true; $("#"+id).classList.remove("done"); });
+  $("#v1").textContent="—"; $("#srcname").textContent="לא נטען סרטון";
+  $("#fmax").textContent="0"; st.in=0; st.out=1;
+  $("#file").value=""; $("#close").disabled=true;
+  closeLabelEditor(false);
+  setMode("org"); goto(0); refresh();
+}
+let closeArmed=0;
+$("#close").onclick=()=>{
+  const b=$("#close");
+  if(P().size && !closeArmed){          // no modal dialogs — confirm inline
+    closeArmed=1; b.textContent="לחצו שוב לאישור";
+    setTimeout(()=>{ closeArmed=0; b.textContent="סגירת הסרטון"; },3000);
+    return;
+  }
+  closeArmed=0; b.textContent="סגירת הסרטון"; closeVideo();
+};
+
+/* ================= automatic tracking =================
+   Normalised cross-correlation of a fixed template, searched in a window around
+   the position predicted from the last two matches, with sub-pixel refinement.
+   The point that is tracked is the CENTRE of the box the user drew. */
+const work=document.createElement("canvas");
+const wctx=work.getContext("2d",{willReadFrequently:true});
+let tracking=false;
+
+function grabFrame(){
+  if(work.width!==stage.width||work.height!==stage.height){ work.width=stage.width; work.height=stage.height; }
+  wctx.drawImage(video,0,0,work.width,work.height);
+}
+function grayOf(x,y,w,h){
+  x=Math.max(0,Math.min(work.width-1,Math.round(x)));
+  y=Math.max(0,Math.min(work.height-1,Math.round(y)));
+  w=Math.max(1,Math.min(work.width-x,Math.round(w)));
+  h=Math.max(1,Math.min(work.height-y,Math.round(h)));
+  const d=wctx.getImageData(x,y,w,h).data, g=new Float32Array(w*h);
+  for(let i=0,j=0;j<g.length;j++,i+=4) g[j]=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+  return {g,w,h,x,y};
+}
+function buildTemplate(){
+  const t=st.tpl;
+  if(!t || t.w<6 || t.h<6) return null;
+  grabFrame();
+  const T=grayOf(t.x,t.y,Math.min(t.w,90),Math.min(t.h,90));   // capped: search cost grows with area
+  let m=0; for(const v of T.g) m+=v; m/=T.g.length;
+  let ss=0; for(const v of T.g) ss+=(v-m)*(v-m);
+  T.mean=m; T.norm=Math.sqrt(ss);
+  T.contrast=Math.sqrt(ss/T.g.length);
+  st.tpl={x:T.x,y:T.y,w:T.w,h:T.h};
+  st.tplData=T;
+  return T;
+}
+function matchAround(cx,cy,R){                  // cx,cy = predicted CENTRE
+  const T=st.tplData; if(!T) return null;
+  const sx=Math.round(cx-T.w/2)-R, sy=Math.round(cy-T.h/2)-R;
+  const S=grayOf(sx,sy,T.w+2*R,T.h+2*R);
+  const maxDx=S.w-T.w, maxDy=S.h-T.h;
+  if(maxDx<1||maxDy<1) return null;
+  const sc=[];
+  const score=(dx,dy)=>{
+    if(sc[dy]&&sc[dy][dx]!==undefined) return sc[dy][dx];
+    let sum=0,sum2=0,dot=0;
+    for(let j=0;j<T.h;j++){
+      const so=(dy+j)*S.w+dx, to=j*T.w;
+      for(let i=0;i<T.w;i++){ const v=S.g[so+i]; sum+=v; sum2+=v*v; dot+=v*T.g[to+i]; }
+    }
+    const n=T.w*T.h, mean=sum/n, varr=sum2-n*mean*mean;
+    const v = varr>1e-6 ? (dot-n*mean*T.mean)/(Math.sqrt(varr)*T.norm) : -1;
+    (sc[dy]=sc[dy]||[])[dx]=v; return v;
+  };
+  // coarse pass on a stride-2 grid, then a fine pass around the winner
+  let best=-2,bx=0,by=0;
+  for(let dy=0;dy<=maxDy;dy+=2) for(let dx=0;dx<=maxDx;dx+=2){
+    const v=score(dx,dy); if(v>best){ best=v; bx=dx; by=dy; }
+  }
+  for(let dy=Math.max(0,by-2);dy<=Math.min(maxDy,by+2);dy++)
+    for(let dx=Math.max(0,bx-2);dx<=Math.min(maxDx,bx+2);dx++){
+      const v=score(dx,dy); if(v>best){ best=v; bx=dx; by=dy; }
+    }
+  for(let dy=Math.max(0,by-1);dy<=Math.min(maxDy,by+1);dy++)      // neighbours for the sub-pixel fit
+    for(let dx=Math.max(0,bx-1);dx<=Math.min(maxDx,bx+1);dx++) score(dx,dy);
+  // sub-pixel: parabola through the three scores around the peak
+  const sub=(m,l,r)=>{ const d=l-2*m+r; return Math.abs(d)>1e-9 ? 0.5*(l-r)/d : 0; };
+  let fx=0, fy=0;
+  if(bx>0&&bx<maxDx) fx=sub(sc[by][bx],sc[by][bx-1],sc[by][bx+1]);
+  if(by>0&&by<maxDy) fy=sub(sc[by][bx],sc[by-1][bx],sc[by+1][bx]);
+  return { x:S.x+bx+fx+T.w/2, y:S.y+by+fy+T.h/2, score:best };
+}
+function seekFrame(f){
+  return new Promise(res=>{
+    const h=()=>{ video.removeEventListener("seeked",h); res(); };
+    video.addEventListener("seeked",h);
+    video.currentTime=Math.min(video.duration-1e-4,(f+0.5)/st.fps);
+  });
+}
+function setAutoUI(on){
+  $("#s4").querySelector(".ttl").textContent = on ? "עצירת המעקב" : "מעקב אוטומטי";
+  $("#s4").classList.toggle("busy",on);
+}
+async function startAutoTrack(){
+  const T=buildTemplate();
+  if(!T){ st.tpl=null; flash("המלבן קטן מדי — סמנו מלבן סביב הגוף"); setMode("mark"); return; }
+  if(T.contrast<3){                       // a flat patch has nothing to lock onto
+    st.tpl=null; st.tplData=null; setMode("mark");
+    toast("האזור שנבחר אחיד מדי ואין בו מה לזהות. בחרו מלבן צמוד לגוף, עם ניגודיות מול הרקע.");
+    refresh(); return;
+  }
+  if(!M()) addMass();
+  remember(st.sel,st.frame);
+  P().set(st.frame,{x:st.tpl.x+st.tpl.w/2, y:st.tpl.y+st.tpl.h/2, t:video.currentTime});
+  $("#toast").hidden=true;
+  tracking=true; setAutoUI(true); setMode("mark");
+  const R=Math.max(14,Math.min(48,Math.round(Math.max(T.w,T.h)*0.8)));
+  let p1=null, p0={x:st.tpl.x+T.w/2, y:st.tpl.y+T.h/2}, lastT=video.currentTime;
+  for(let f=st.frame+st.step; f<=st.out && tracking; f+=st.step){
+    await seekFrame(f); grabFrame();
+    const pred = p1 ? {x:2*p0.x-p1.x, y:2*p0.y-p1.y} : p0;   // constant-velocity guess
+    const m=matchAround(pred.x,pred.y,R);
+    if(!m || m.score<0.55){
+      toast("המעקב נעצר בפריים "+f+" — הגוף לא זוהה. סמנו ידנית בלחיצה, או בחרו תבנית חדשה בשלב 4.");
+      break;
+    }
+    const tt=video.currentTime;
+    if(lastT!=null && Math.abs(tt-lastT)<1e-6) continue;   // same frame twice: fps is set too high
+    lastT=tt;
+    remember(st.sel,f);
+    P().set(f,{x:m.x,y:m.y,t:tt});
+    st.tpl={x:m.x-T.w/2,y:m.y-T.h/2,w:T.w,h:T.h};
+    p1=p0; p0={x:m.x,y:m.y};
+    st.frame=f; $("#fno").textContent=f; $("#tval").textContent=tt.toFixed(3); drawTimeline();
+    drawStage(); refresh();
+    await new Promise(r=>setTimeout(r,0));
+  }
+  tracking=false; setAutoUI(false); refresh();
+  if(P().size>1) flash("המעקב הסתיים — "+P().size+" נקודות ל"+M().name);
+}
+async function detectFps(){
+  if(st.kind!=="video") return;
+  if(!video.requestVideoFrameCallback){ flash("הדפדפן הזה לא מאפשר מדידת fps — הקלידו ידנית"); return; }
+  flash("מודד קצב פריימים…");
+  const t=[]; video.currentTime=0;
+  await new Promise(res=>{
+    const cb=(now,meta)=>{ t.push(meta.mediaTime);
+      if(t.length<24) video.requestVideoFrameCallback(cb); else res(); };
+    video.requestVideoFrameCallback(cb); video.play();
+    setTimeout(res,4000);
+  });
+  video.pause();
+  const d=[]; for(let i=1;i<t.length;i++){ const x=t[i]-t[i-1]; if(x>1e-4) d.push(x); }
+  if(d.length<4){ flash("לא הצלחתי למדוד — הקלידו fps ידנית"); return; }
+  // mediaTime is quantised to ~1 ms, so a single gap is too coarse: count how many
+  // frame steps happened (dropped frames included) across the whole measured span.
+  const sorted=[...d].sort((a,b)=>a-b), unit=sorted[0];
+  let steps=0, span=0;
+  d.forEach(x=>{ steps+=Math.max(1,Math.round(x/unit)); span+=x; });
+  const raw = span>0 ? steps/span : 0;
+  const std=[23.976,24,25,29.97,30,48,50,59.94,60,90,100,119.88,120,240];
+  let fps=raw, best=Infinity;
+  std.forEach(v=>{ const e=Math.abs(v-raw)/v; if(e<0.03 && e<best){ best=e; fps=v; } });
+  fps=+fps.toFixed(3);
+  st.fps=fps; $("#fps").value=fps;
+  st.frames=Math.max(1,Math.floor(video.duration*fps)-1);
+  $("#fmax").textContent=st.frames; st.in=Math.min(st.in,st.frames-1); st.out=st.frames;
+  goto(0); refresh(); flash("קצב הפריימים שנמדד: "+fps+" fps");
+}
+$("#fpsdet").onclick=detectFps;
+
+$("#s4").onclick=()=>{
+  if(tracking){ tracking=false; return; }
+  if(st.frame<st.in||st.frame>st.out) goto(st.in);
+  st.tpl=null; st.tplData=null; setMode("sel"); drawOverlay();
+};
+
+/* ================= masses ================= */
+const massBox=$("#masses");
+function renderMasses(){
+  if(!st.masses.length){ massBox.hidden=true; massBox.innerHTML=""; return; }
+  massBox.hidden=false;
+  massBox.innerHTML =
+    '<div class="mchips">'
+    + st.masses.map((m,i)=>
+        '<div class="mchip'+(i===st.sel?' on':'')+'" data-i="'+i+'" style="--mc:'+m.color+'"'
+        + ' title="'+(i===st.sel?'נבחרה למעקב':'בחר למעקב')+' · '+m.pts.size+' נק׳">'
+        + '<span class="dot"></span>'
+        + '<input class="mname" value="'+m.name.replace(/"/g,'&quot;')+'" data-i="'+i+'" readonly>'
+        + '<button class="medit" data-edit="'+i+'" title="עריכת השם">✎</button>'
+        + (st.masses.length>1?'<button class="mdel" data-del="'+i+'" title="מחיקה">✕</button>':'')
+        + '</div>').join("")
+    + (st.masses.length<MCOL.length ? '<button class="addm" id="addm" title="הוספת מסה">+</button>' : '')
+    + '</div>'
+    + (st.masses.length>1 ? '<span class="mcap">לחיצה על מסה — בחירה למעקב</span>' : '');
+}
+massBox.addEventListener("click",e=>{
+  const del=e.target.closest("[data-del]");
+  if(del){ const i=+del.dataset.del; st.masses.splice(i,1);
+    st.cols=st.cols.filter(c=>+c.split(":")[0]!==i).map(c=>{ const [mi,k]=c.split(":");
+      return (+mi>i? (+mi-1) : +mi)+":"+k; });
+    st.sel=Math.max(0,Math.min(st.sel, st.masses.length-1));
+    st.tpl=null; st.tplData=null; renderMasses(); refresh(); return; }
+  if(e.target.id==="addm"){ if(st.masses.length<MCOL.length) addMass(); return; }
+  const ed=e.target.closest("[data-edit]");
+  if(ed){ const i=+ed.dataset.edit; if(i!==st.sel){ st.sel=i; st.tpl=null; st.tplData=null; renderMasses(); refresh(); }
+    const inp=massBox.querySelector('.mname[data-i="'+i+'"]'); inp.readOnly=false; inp.focus(); inp.select(); return; }
+  if(e.target.classList.contains("mname") && !e.target.readOnly) return;
+  const row=e.target.closest(".mchip");
+  if(row){
+    const i=+row.dataset.i;
+    if(i===st.sel) return;                       // already selected: let the name be edited
+    st.sel=i; st.tpl=null; st.tplData=null; renderMasses(); refresh();
+  }
+});
+massBox.addEventListener("pointerdown",e=>{     // the name is text until the pencil is pressed
+  if(e.target.classList.contains("mname") && e.target.readOnly) e.preventDefault();
+});
+massBox.addEventListener("focusout",e=>{ if(e.target.classList.contains("mname")){ e.target.readOnly=true; renderMasses(); } });
+massBox.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key==="Escape") e.target.blur(); });
+massBox.addEventListener("input",e=>{
+  if(e.target.classList.contains("mname")){
+    const i=+e.target.dataset.i; st.masses[i].name=e.target.value || ("מסה "+MNAME[i]);
+    renderCols(); drawChart(); drawTable();
+  }
+});
+massBox.addEventListener("keydown",e=>{ e.stopPropagation(); });
+function updateMassMeta(){        // live counts in the tooltip, without rebuilding the inputs
+  massBox.querySelectorAll(".mchip").forEach(row=>{
+    const i=+row.dataset.i, m=st.masses[i];
+    if(m) row.title=(i===st.sel?"נבחרה למעקב":"בחר למעקב")+" · "+m.pts.size+" נק׳";
+  });
+}
+
+/* ================= timeline + transport ================= */
+const tl=$("#tl");
+function tlPad(){ return 9; }
+function tlW(){ return Math.max(1, tl.clientWidth - 2*tlPad()); }
+function fToX(f){ return tlPad() + (st.frames? f/st.frames : 0)*tlW(); }
+function xToF(clientX){
+  const r=tl.getBoundingClientRect();
+  return Math.round(Math.max(0,Math.min(1,(clientX-r.left-tlPad())/tlW()))*st.frames);
+}
+function drawTimeline(){
+  const a=fToX(st.in), b=fToX(st.out);
+  $("#tlrange").style.left=(a-tlPad())+"px";
+  $("#tlrange").style.width=Math.max(0,b-a)+"px";
+  $("#tlin").style.left=a+"px";  $("#tlout").style.left=b+"px";
+  $("#tlhead").style.left=fToX(st.frame)+"px";
+  const keys=[...P().keys()].sort((x,y)=>x-y).slice(0,400);
+  $("#tlmarks").innerHTML=keys.map(f=>'<i class="tl-mark" style="left:'+(fToX(f)-tlPad())+'px"></i>').join("");
+  $("#tlnow").textContent="תחום "+(st.in/st.fps).toFixed(2)+"–"+(st.out/st.fps).toFixed(2)+"s";
+  $("#v0").textContent = st.kind==="none" ? "—" : st.in+"–"+st.out;
+}
+let tldrag=null;
+tl.addEventListener("pointerdown",e=>{
+  if(st.kind==="none") return;
+  const x=e.clientX, din=Math.abs(x-(tl.getBoundingClientRect().left+fToX(st.in)));
+  const dout=Math.abs(x-(tl.getBoundingClientRect().left+fToX(st.out)));
+  const R=COARSE?24:16;
+  const onTri = e.target.classList && e.target.classList.contains("tl-tri");
+  tldrag = e.target.id==="tlin" ? "in" : e.target.id==="tlout" ? "out"
+         : (din<R && din<=dout) ? "in" : (dout<R ? "out" : "head");
+  e.preventDefault();
+  tl.setPointerCapture(e.pointerId);
+  tlMove(e);
+});
+tl.addEventListener("pointermove",e=>{ if(tldrag) tlMove(e); });
+tl.addEventListener("pointerup",()=>{ tldrag=null; refresh(); });
+function tlMove(e){
+  const f=xToF(e.clientX);
+  if(tldrag==="in"){ st.in=Math.max(0,Math.min(f, st.out-1)); goto(st.in); }
+  else if(tldrag==="out"){ st.out=Math.min(st.frames,Math.max(f, st.in+1)); goto(st.out); }
+  else goto(f);
+}
+$("#s0").onclick=()=>{ setMode("range"); goto(st.in); };
+
+function goto(f){
+  if(tracking) return;
+  st.frame = Math.max(0, Math.min(st.frames, f));
+  $("#fno").textContent = st.frame;
+  $("#tval").textContent = (st.frame/st.fps).toFixed(3);
+  drawTimeline();
+  applyFrame();
+}
+function centerZoom(f){ const r=scroller.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, f); }
+$("#zin").onclick=()=>centerZoom(1.4);
+$("#fzin").onclick=()=>centerZoom(1.5); $("#fzout").onclick=()=>centerZoom(1/1.5); $("#fzrst").onclick=resetView;
+$("#zout").onclick=()=>centerZoom(1/1.4);
+$("#zrst").onclick=resetView;
+$("#prev").onclick=()=>goto(st.frame-1);
+$("#next").onclick=()=>goto(st.frame+1);
+$("#first").onclick=()=>goto(st.in);
+$("#last").onclick=()=>goto(st.out);
+
+$("#play").onclick=togglePlay;
+$("#undobtn").onclick=()=>undoLast();
+$("#clear2").onclick=()=>$("#clear").click();
+$("#mute").onclick=()=>{
+  video.muted=!video.muted;
+  $("#mute").textContent = video.muted ? "🔇" : "🔊";
+  $("#mute").dataset.tip = video.muted ? "קול הסרטון (מושתק)" : "קול הסרטון (פועל)";
+};
+document.addEventListener("keydown",e=>{
+  if(/input|select|textarea/i.test(e.target.tagName)) return;
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="z"){ undoLast(); e.preventDefault(); return; }
+  if(e.key==="ArrowLeft"){goto(st.frame+1);e.preventDefault();}      // RTL: left = forward
+  else if(e.key==="ArrowRight"){goto(st.frame-1);e.preventDefault();}
+  else if(e.key===" "){togglePlay();e.preventDefault();}
+});
+let raf=0, t0=0, f0=0;
+function togglePlay(){
+  st.playing=!st.playing; $("#play").textContent = st.playing?"❚❚":"▶";
+  if(st.kind==="video"){ st.playing? video.play() : video.pause(); }
+  if(st.playing){ t0=performance.now(); f0=st.frame; raf=requestAnimationFrame(tick); }
+  else cancelAnimationFrame(raf);
+}
+function tick(now){
+  if(!st.playing) return;
+  let f;
+  if(st.kind==="video"){ f=Math.round(video.currentTime*st.fps); drawStage(); }
+  else { f = f0 + Math.floor((now-t0)/1000*st.fps); }
+  if(f>st.out){ togglePlay(); goto(st.out); return; }
+  if(f!==st.frame){ st.frame=f; $("#fno").textContent=f;
+    $("#tval").textContent=(f/st.fps).toFixed(3); drawTimeline(); if(st.kind!=="video") drawStage(); }
+  raf=requestAnimationFrame(tick);
+}
+
+/* ================= modes ================= */
+const HINTS={
+  range:"<b>שלב 0 · תחום הסרטון:</b> גררו את שני המשולשים שמתחת לסרגל הזמן כדי לקבוע היכן מתחילה התנועה שמעניינת אתכם והיכן היא נגמרת. הניתוח, הניגון והמעקב האוטומטי יעבדו רק בתוך התחום הזה.",
+  org:"<b>שלב 1 · צירים:</b> לוחצים במקום שבו תשב ראשית הצירים (בדרך כלל נקודת ההתחלה של התנועה). ציר x כחול ימינה, ציר y כלפי מעלה. גררו את העיגול שבקצה ציר x או y כדי לסובב את מערכת הצירים (הם נשארים ניצבים). לחיצה ימנית (בטלפון: החזקה של שנייה וחצי על הצירים או על הסרגל) פותחת תפריט לסיבוב מדויק, להיפוך הכיוון החיובי של כל ציר, לצבע ולנעילה.",
+  cal:"<b>שלב 2 · קנה מידה:</b> גוררים את קצות הסרגל הירוק לשני קצות עצם שאורכו ידוע בסרטון, ולוחצים על התווית שעליו כדי להקליד את האורך במטרים. בלי זה אין יחידות.",
+  sel:"<b>מעקב אוטומטי:</b> גוררים מלבן סביב הגוף — כך שמרכז המלבן יהיה בדיוק על הנקודה שברצונכם לעקוב אחריה (מרכז הכדור, סימן על הגוף). ברגע שמשחררים, התוכנה מחפשת את אותה תבנית פיקסלים בכל פריים הבא וממלאת את הנקודות. <b>חשוב: הצבע של הגוף צריך להיות שונה מהצבע של הרקע — גוף בצבע דומה לרקע התוכנה לא תצליח לזהות.</b>",
+  mark:"<b>שלב 3 · מעקב ידני:</b> לוחצים על הגוף בכל פריים — הסרטון מתקדם לבד והנקודה נכנסת לגרף. לחיצה ימנית מוחקת את הנקודה של הפריים הנוכחי, ו-Ctrl+Z מבטל את הנקודה האחרונה. הסרגל והצירים ניתנים לגרירה גם עכשיו."
+};
+function hintHTML(){
+  return st.kind==="none"
+    ? "<b>מתחילים:</b> לוחצים על «טעינת סרטון…» ובוחרים קליפ מהמחשב. אחר כך שלושה שלבים — צירים, קנה מידה, וסימון המסה. גלגלת העכבר מקרבת ומרחיקה בתוך הסרטון."
+    : HINTS[st.mode];
+}
+function setMode(m){
+  st.mode=m;
+  $("#s0").classList.toggle("on",m==="range");
+  $("#s3").classList.toggle("on",m==="mark");
+  $("#s4").classList.toggle("on",m==="sel");
+  $("#s2").classList.toggle("on",m==="cal");
+  $("#s1").classList.toggle("on",m==="org");
+  clearTimeout(flashT);
+  const COL={range:"--c-range",org:"--c-axes",cal:"--c-scale",mark:"--c-mass",sel:"--c-auto"};
+  $("#hint").style.setProperty("--c","var("+(COL[m]||"--accent")+")");
+  $("#hint").innerHTML=hintHTML();
+  const onBtn=document.querySelector(".step.on"); if(onBtn && onBtn.scrollIntoView) try{ onBtn.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"}); }catch(e){}
+  setCursor(null);
+}
+$("#s3").onclick=()=>{
+  if(!st.masses.length) addMass();
+  setMode("mark"); if(st.frame<st.in||st.frame>st.out) goto(st.in);
+};
+$("#s2").onclick=()=>setMode("cal");
+$("#s1").onclick=()=>setMode("org");
+$("#clear").onclick=()=>{ tracking=false; undo.length=0; P().clear(); st.tpl=null; st.tplData=null; renderMasses(); refresh(); };
+/* start the analysis over — points, masses, axes, scale and range — without touching the video */
+let clearAllArmed=0, clearAllT=0;
+function clearAll(){
+  const b=$("#clearall");
+  if(!clearAllArmed){                                   // an inline warning instead of a modal
+    clearAllArmed=1;
+    if(b){ b.dataset.old=b.textContent; b.textContent="למחוק הכול? לחצו שוב לאישור"; b.classList.add("warn"); }
+    flash("ניקוי הכול: הנקודות, המסות, הצירים וקנה המידה יאופסו. הסרטון יישאר. לחצו שוב לאישור");
+    clearTimeout(clearAllT);
+    clearAllT=setTimeout(()=>{ clearAllArmed=0;
+      if(b && b.dataset.old){ b.textContent=b.dataset.old; b.classList.remove("warn"); } },5000);
+    return;
+  }
+  clearAllArmed=0; clearTimeout(clearAllT);
+  if(b && b.dataset.old){ b.textContent=b.dataset.old; b.classList.remove("warn"); }
+  tracking=false; setAutoUI(false); undo.length=0;
+  st.masses=[]; st.sel=0; st.cols=[]; addMass();
+  st.orgSet=false; st.ang=0; st.fx=1; st.fy=1; st.locked=false; st.calLocked=false;
+  $("#ang").value=0;
+  st.tpl=null; st.tplData=null;
+  st.cal=null; st.scale=null; st.labelBox=null; $("#callen").value=1;
+  if(st.kind==="video"){                                // the same starting stick a fresh video gets
+    const w=stage.width, h=stage.height;
+    st.org={x:w*0.12,y:h*0.88};
+    st.cal={x1:w*0.30,y1:h*0.72,x2:w*0.70,y2:h*0.72}; commitCal();
+  }
+  st.in=0; st.out=st.frames;
+  resetView(); setMode("range"); goto(0); renderMasses(); refresh();
+  flash("הכול נוקה — הסרטון נשאר טעון");
+}
+$("#clearall").onclick=clearAll;
+$("#callen").oninput=()=>{ if(st.cal){commitCal(); refresh();} };
+$("#ang").oninput=()=>{ setAngle(+$("#ang").value||0); };
+$("#fps").oninput=()=>{ st.fps=Math.max(1,+$("#fps").value||30);
+  if(st.kind==="video"){ st.frames=Math.max(1,Math.floor(video.duration*st.fps)-1);
+    $("#fmax").textContent=st.frames; st.out=Math.min(st.out||st.frames,st.frames); }
+  refresh(); };
+$("#step").oninput=()=>{ st.step=Math.max(1,+$("#step").value||1); };
+
+/* ================= source ================= */
+function emptyStage(){
+  const w=stage.width, h=stage.height;
+  sctx.fillStyle="#F7F9FA"; sctx.fillRect(0,0,w,h);
+  sctx.strokeStyle="#E3E9EC"; sctx.lineWidth=1;
+  for(let i=0;i<=w;i+=48){sctx.beginPath();sctx.moveTo(i+.5,0);sctx.lineTo(i+.5,h);sctx.stroke();}
+  for(let j=0;j<=h;j+=48){sctx.beginPath();sctx.moveTo(0,j+.5);sctx.lineTo(w,j+.5);sctx.stroke();}
+  sctx.save(); sctx.direction="rtl"; sctx.textAlign="center";
+  sctx.fillStyle="#33424E"; sctx.font="500 22px Arial, sans-serif";
+  sctx.fillText("טענו סרטון כדי להתחיל", w/2, h/2-6);
+  sctx.fillStyle="#7A8A95"; sctx.font="16px Arial, sans-serif";
+  sctx.fillText("הקובץ נפתח מקומית בדפדפן ולא נשלח לשום שרת", w/2, h/2+22);
+  sctx.restore();
+}
+function showFirstFrame(){        // some files decode late — keep asking until a frame is painted
+  const paint=()=>{ if(st.kind==="video") drawStage(); };
+  if(video.requestVideoFrameCallback) video.requestVideoFrameCallback(paint);
+  video.currentTime=0.5/st.fps;          // the same instant goto(0) uses, so frame times stay uniform
+  [80,250,600,1200].forEach(ms=>setTimeout(paint,ms));
+}
+["dragenter","dragover"].forEach(ev=>document.addEventListener(ev,e=>{
+  if([...(e.dataTransfer?.types||[])].includes("Files")){ e.preventDefault(); wrap.classList.add("drop"); }
+}));
+["dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{
+  if(ev==="drop" || !e.relatedTarget) wrap.classList.remove("drop");
+}));
+document.addEventListener("drop",e=>{
+  const f=[...(e.dataTransfer?.files||[])].find(x=>/^video\//.test(x.type)||/\.(mp4|mov|webm|m4v|mkv|avi)$/i.test(x.name));
+  if(!f) return;
+  e.preventDefault(); openFile(f);
+});
+$("#file").onchange=e=>{ const f=e.target.files[0]; if(f) openFile(f); };
+function openFile(f){
+  video.src=URL.createObjectURL(f);
+  video.addEventListener("loadedmetadata",()=>{
+    st.kind="video"; st.masses=[]; st.sel=0; st.cols=[]; addMass(); st.cal=null; st.scale=null; st.orgSet=false; st.ang=0; st.fx=1; st.fy=1; st.locked=false; st.calLocked=false; $("#ang").value=0;
+    st.tpl=null; st.tplData=null; view.z=1;
+    st.fps=Math.max(1,+$("#fps").value||30);
+    st.frames=Math.max(1,Math.floor(video.duration*st.fps)-1);
+    stage.width=ov.width=video.videoWidth; stage.height=ov.height=video.videoHeight;
+    st.org={x:stage.width*0.12,y:stage.height*0.88};
+    $("#fmax").textContent=st.frames; st.in=0; st.out=st.frames;
+    // a starting stick across the middle of the frame - drag its ends onto a known length
+    const w=stage.width, h=stage.height;
+    st.cal={x1:w*0.30,y1:h*0.72,x2:w*0.70,y2:h*0.72}; commitCal();
+    $("#wrap").style.aspectRatio=video.videoWidth+"/"+video.videoHeight; fitLayout(); sizeWrap();
+    $("#srcname").textContent=f.name+" · "+video.videoWidth+"\u00d7"+video.videoHeight
+      +" · "+video.duration.toFixed(1)+"s";
+    $("#close").disabled=false;
+    ["s0","s1","s2","s3","s4"].forEach(id=>$("#"+id).disabled=false);
+    $("#fpsdet").disabled=false; resetView();
+    setMode("range"); goto(0); refresh();
+    showFirstFrame();
+    const vb=document.querySelector('.mnav [data-m="video"]'); if(vb && document.body.dataset.mtab!=="video") vb.click();
+  },{once:true});
+}
+
+/* ================= least squares ================= */
+function solve(A,b){                       // gaussian elimination, n≤4
+  const n=b.length, M=A.map((r,i)=>[...r,b[i]]);
+  for(let c=0;c<n;c++){
+    let p=c; for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[p][c])) p=r;
+    if(Math.abs(M[p][c])<1e-12) return null;
+    [M[c],M[p]]=[M[p],M[c]];
+    for(let r=0;r<n;r++){ if(r===c) continue; const k=M[r][c]/M[c][c];
+      for(let j=c;j<=n;j++) M[r][j]-=k*M[c][j]; }
+  }
+  return M.map((r,i)=>r[n]/r[i]);
+}
+function lsq(basis, us, ys){               // basis: u -> [f1..fk]
+  const k=basis(us[0]).length;
+  const A=Array.from({length:k},()=>new Array(k).fill(0)), b=new Array(k).fill(0);
+  for(let i=0;i<us.length;i++){ const f=basis(us[i]);
+    for(let r=0;r<k;r++){ b[r]+=f[r]*ys[i]; for(let c=0;c<k;c++) A[r][c]+=f[r]*f[c]; } }
+  return solve(A,b);
+}
+function r2(ys, pred){
+  const m=ys.reduce((a,b)=>a+b,0)/ys.length;
+  let ss=0, st_=0; ys.forEach((y,i)=>{ ss+=(y-pred[i])**2; st_+=(y-m)**2; });
+  return st_>0 ? 1-ss/st_ : 1;
+}
+function fitModel(kind, us, ys){
+  if(us.length<3) return null;
+  if(kind==="lin"){ const c=lsq(u=>[u,1],us,ys); if(!c) return null;
+    return {c, fn:u=>c[0]*u+c[1], eq:`f(u) = ${n(c[0])}·u ${sg(c[1])}`}; }
+  if(kind==="quad"){ const c=lsq(u=>[u*u,u,1],us,ys); if(!c) return null;
+    return {c, fn:u=>c[0]*u*u+c[1]*u+c[2], eq:`f(u) = ${n(c[0])}·u² ${sg(c[1])}·u ${sg(c[2])}`}; }
+  if(kind==="sin"){
+    const span=us[us.length-1]-us[0]; if(span<=0) return null;
+    let best=null;
+    const wMax = Math.min(80, 2*Math.PI*us.length/(2*span));   // below the sampling limit
+    for(let i=1;i<=900;i++){
+      const w = 0.3 + i*(wMax-0.3)/900;                        // rad/s grid
+      const c=lsq(u=>[Math.sin(w*u),Math.cos(w*u),1],us,ys); if(!c) continue;
+      const pred=us.map(u=>c[0]*Math.sin(w*u)+c[1]*Math.cos(w*u)+c[2]);
+      let ss=0; ys.forEach((y,k)=>ss+=(y-pred[k])**2);
+      if(!best||ss<best.ss) best={ss,w,c};
+    }
+    if(!best) return null;
+    const {w,c}=best, A=Math.hypot(c[0],c[1]), ph=Math.atan2(c[1],c[0]);
+    return {c:[A,w,ph,c[2]], fn:u=>A*Math.sin(w*u+ph)+c[2],
+      eq:`f(u) = ${n(A)}·sin(${n(w)}·u ${sg(ph)}) ${sg(c[2])}`};
+  }
+  return null;
+}
+const n = v => (Math.abs(v)>=1000||Math.abs(v)<0.001&&v!==0) ? v.toExponential(3) : (+v).toFixed(4).replace(/0+$/,"").replace(/\.$/,"");
+const sg = v => (v<0?"− ":"+ ")+n(Math.abs(v));
+
+/* ================= chart ================= */
+const LBL={t:"t (s)",x:"x (m)",y:"y (m)",vx:"vx (m/s)",vy:"vy (m/s)",v:"|v| (m/s)",ax:"ax (m/s²)",ay:"ay (m/s²)"};
+const VAR={t:"t",x:"x",y:"y",vx:"vx",vy:"vy",v:"v",ax:"ax",ay:"ay"};
+function eqText(kind,c,Y,X){          // the fitted model written with the axes actually chosen
+  if(kind==="lin")  return `${Y} = ${n(c[0])}·${X} ${sg(c[1])}`;
+  if(kind==="quad") return `${Y} = ${n(c[0])}·${X}² ${sg(c[1])}·${X} ${sg(c[2])}`;
+  if(kind==="sin")  return `${Y} = ${n(c[0])}·sin(${n(c[1])}·${X} ${sg(c[2])}) ${sg(c[3])}`;
+  return "";
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function niceTicks(lo,hi,count){
+  const span=(hi-lo)||1, raw=span/count, mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const norm=raw/mag, s=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag;
+  const out=[]; for(let v=Math.ceil(lo/s)*s; v<=hi+1e-9; v+=s) out.push(+v.toFixed(10));
+  return out;
+}
+function drawChart(){
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const cbox=$("#chartbox").getBoundingClientRect();
+  const cw=Math.max(240,Math.round(cbox.width)), ch=Math.max(180,Math.round(cbox.height));
+  chart.width=cw*dpr; chart.height=ch*dpr;
+  cctx.setTransform(dpr,0,0,dpr,0,0);
+  cctx.direction="ltr";                    // numbers keep their minus sign in front, even on an RTL page
+  const ink=css("--ink"), muted=css("--muted"), line=css("--line-soft"),
+        data=css("--data"), acc=css("--accent"), panel=css("--panel-2");
+  cctx.fillStyle=panel; cctx.fillRect(0,0,cw,ch);
+
+  const xk=$("#xsel").value, yk=$("#ysel").value;
+  const all=st.masses.map((m,i)=>({m, rows:series(i).filter(r=>isFinite(r[xk])&&isFinite(r[yk]))}));
+  const rows=(all[st.sel]?all[st.sel].rows:[]);
+  const pool=all.flatMap(a=>a.rows);
+  const PHONE = isPhone();
+  const pad={l:58,r:16,t:PHONE?62:16,b:38};        // on a phone a strip above the plot holds the labels
+  const iw=cw-pad.l-pad.r, ih=ch-pad.t-pad.b;
+
+  if(rows.length<2){
+    cctx.fillStyle=muted; cctx.font="16px "+css("--font-body");
+    cctx.textAlign="center"; cctx.fillText("אין מספיק נקודות עדיין", cw/2, ch/2);
+    $("#fitres").textContent="סמנו נקודות כדי לקבל התאמה."; return;
+  }
+  const us=rows.map(r=>r[xk]), vs=rows.map(r=>r[yk]);
+  const pu=pool.map(r=>r[xk]), pv=pool.map(r=>r[yk]);
+  let x0=Math.min(...pu), x1=Math.max(...pu), y0=Math.min(...pv), y1=Math.max(...pv);
+  const mxp=(x1-x0)*0.05||0.5, myp=(y1-y0)*0.12||0.5;
+  x0-=mxp; x1+=mxp; y0-=myp; y1+=myp;
+  const X=u=>pad.l+(u-x0)/(x1-x0)*iw, Y=v=>pad.t+ih-(v-y0)/(y1-y0)*ih;
+
+  cctx.strokeStyle=line; cctx.lineWidth=1; cctx.font="12.5px "+css("--font-num"); cctx.fillStyle=muted;
+  cctx.textAlign="center"; cctx.textBaseline="top";
+  niceTicks(x0,x1,6).forEach(v=>{ const px=X(v);
+    cctx.beginPath(); cctx.moveTo(px,pad.t); cctx.lineTo(px,pad.t+ih); cctx.stroke();
+    cctx.fillText(String(+v.toFixed(3)), px, pad.t+ih+7); });
+  cctx.textAlign="right"; cctx.textBaseline="middle";
+  niceTicks(y0,y1,5).forEach(v=>{ const py=Y(v);
+    cctx.beginPath(); cctx.moveTo(pad.l,py); cctx.lineTo(pad.l+iw,py); cctx.stroke();
+    cctx.fillText(String(+v.toFixed(3)), pad.l-7, py); });
+
+  cctx.strokeStyle=muted; cctx.lineWidth=1.2;
+  cctx.beginPath(); cctx.moveTo(pad.l,pad.t); cctx.lineTo(pad.l,pad.t+ih); cctx.lineTo(pad.l+iw,pad.t+ih); cctx.stroke();
+  cctx.fillStyle=ink; cctx.font="13.5px "+css("--font-body");
+  cctx.textAlign="center"; cctx.textBaseline="alphabetic";
+  cctx.fillText(LBL[xk], pad.l+iw/2, ch-6);
+  cctx.save(); cctx.translate(13,pad.t+ih/2); cctx.rotate(-Math.PI/2);
+  cctx.fillText(LBL[yk],0,0); cctx.restore();
+
+  // fit curve
+  const kind=$("#model").value;
+  let fit=null;
+  if(kind!=="none"){
+    fit=fitModel(kind,us,vs);
+    if(fit){
+      cctx.strokeStyle=acc; cctx.lineWidth=2; cctx.beginPath();
+      for(let i=0;i<=180;i++){ const u=x0+(x1-x0)*i/180, v=fit.fn(u);
+        const py=Y(v); if(py<pad.t-40||py>pad.t+ih+40){ cctx.stroke(); cctx.beginPath(); continue; }
+        i?cctx.lineTo(X(u),py):cctx.moveTo(X(u),py); }
+      cctx.stroke();
+    }
+  }
+  const EQ = fit ? eqText(kind, fit.c, VAR[yk], VAR[xk]) : "";
+  // points — one colour per mass, the selected one solid
+  all.forEach((a,mi)=>{
+    cctx.globalAlpha = mi===st.sel ? 1 : .5;
+    a.rows.forEach(r=>{ const px=X(r[xk]), py=Y(r[yk]);
+      cctx.fillStyle=a.m.color;
+      cctx.beginPath(); cctx.arc(px,py,(r.f===st.frame && mi===st.sel)?5:3.2,0,7); cctx.fill();
+      if(r.f===st.frame && mi===st.sel){ cctx.strokeStyle=acc; cctx.lineWidth=1;
+        cctx.beginPath(); cctx.arc(px,py,9,0,7); cctx.stroke(); } });
+    cctx.globalAlpha=1;
+  });
+  st.chartUI={ map:{X,Y,x0,x1,y0,y1,pad,iw,ih,cw,ch}, pts:all.map((a,mi)=>a.rows.map(r=>({mi,r,px:X(r[xk]),py:Y(r[yk])}))).flat() };
+  if(all.length>1){                       // legend (draggable)
+    cctx.font="13px "+css("--font-body");
+    const lw=Math.max(...all.map(a=>{ cctx.direction="rtl"; return cctx.measureText(a.m.name).width; }))+30;
+    const lh=all.length*15+8;
+    const lp=st.legPos || {x:cw-pad.r-lw-2, y:PHONE?4:pad.t+2};
+    lp.x=Math.max(2,Math.min(cw-lw-2,lp.x)); lp.y=Math.max(2,Math.min(ch-lh-2,lp.y));
+    cctx.fillStyle=css("--panel"); cctx.globalAlpha=.9; cctx.beginPath(); cctx.roundRect(lp.x,lp.y,lw,lh,6); cctx.fill(); cctx.globalAlpha=1;
+    cctx.strokeStyle=line; cctx.lineWidth=1; cctx.stroke();
+    cctx.textAlign="right"; cctx.textBaseline="middle"; cctx.direction="rtl";
+    all.forEach((a,mi)=>{ const yy=lp.y+11+mi*15, xx=lp.x+lw-16;
+      cctx.fillStyle=a.m.color; cctx.beginPath(); cctx.arc(xx+8,yy,4,0,7); cctx.fill();
+      cctx.fillStyle=mi===st.sel?ink:muted; cctx.fillText(a.m.name, xx, yy); });
+    cctx.textAlign="left"; cctx.textBaseline="alphabetic"; cctx.direction="ltr";
+    st.chartUI.leg={x:lp.x,y:lp.y,w:lw,h:lh};
+  } else st.chartUI.leg=null;
+
+  // the equation + R², written on the plot itself (draggable)
+  const Rfit = fit ? r2(vs, us.map(fit.fn)) : null;
+  if(fit && EQ){
+    cctx.font="600 "+(PHONE?13:15)+"px "+css("--font-num");
+    cctx.direction="ltr"; cctx.textAlign="left"; cctx.textBaseline="middle";
+    const R2T="R² = "+Rfit.toFixed(5);
+    const tw=Math.max(cctx.measureText(EQ).width, cctx.measureText(R2T).width)+16, th=44;
+    const upper=pool.filter(r=>Y(r[yk])<pad.t+ih/2).length > pool.length/2;
+    const ep=st.eqPos || (PHONE ? {x:6, y:6} : {x:pad.l+8, y: upper ? pad.t+ih-th-6 : pad.t+6});
+    ep.x=Math.max(2,Math.min(cw-tw-2,ep.x)); ep.y=Math.max(2,Math.min(ch-th-2,ep.y));
+    cctx.fillStyle=css("--panel"); cctx.globalAlpha=.94; cctx.beginPath();
+    cctx.roundRect(ep.x, ep.y, tw, th, 7); cctx.fill(); cctx.globalAlpha=1;
+    cctx.strokeStyle=acc; cctx.lineWidth=1; cctx.stroke();
+    cctx.fillStyle=acc; cctx.fillText(EQ, ep.x+8, ep.y+14);
+    cctx.font="13.5px "+css("--font-num"); cctx.fillStyle=ink; cctx.fillText(R2T, ep.x+8, ep.y+32);
+    cctx.textBaseline="alphabetic";
+    st.chartUI.eq={x:ep.x,y:ep.y,w:tw,h:th};
+  } else st.chartUI.eq=null;
+  // hover: the point under the cursor, live
+  if(chartHover){
+    const h=chartHover, m=st.chartUI.map;
+    let best=null;
+    st.chartUI.pts.forEach(q=>{ const d=Math.hypot(q.px-h.x,q.py-h.y); if(d<14 && (!best||d<best.d)) best={...q,d}; });
+    let lines;
+    if(best){
+      cctx.strokeStyle=st.masses[best.mi].color; cctx.lineWidth=1.5;
+      cctx.beginPath(); cctx.arc(best.px,best.py,8,0,7); cctx.stroke();
+      lines=[st.masses[best.mi].name+"  ·  פריים "+best.r.f,
+             VAR[xk]+" = "+best.r[xk].toFixed(4)+"     "+VAR[yk]+" = "+best.r[yk].toFixed(4)];
+    } else if(h.x>=pad.l && h.x<=pad.l+iw && h.y>=pad.t && h.y<=pad.t+ih){
+      const ux=x0+(h.x-pad.l)/iw*(x1-x0), uy=y0+(pad.t+ih-h.y)/ih*(y1-y0);
+      lines=[VAR[xk]+" = "+ux.toFixed(3)+"     "+VAR[yk]+" = "+uy.toFixed(3)];
+    }
+    if(lines){
+      cctx.font="13px "+css("--font-num"); cctx.direction="ltr"; cctx.textAlign="left"; cctx.textBaseline="middle";
+      const w=Math.max(...lines.map(l=>cctx.measureText(l).width))+14, hh=lines.length*16+8;
+      let tx=h.x+14, ty=h.y-hh-6; if(tx+w>cw-4) tx=h.x-w-14; if(ty<2) ty=h.y+14;
+      cctx.fillStyle=best?css("--panel"):"rgba(255,255,255,.85)"; cctx.beginPath(); cctx.roundRect(tx,ty,w,hh,6); cctx.fill();
+      cctx.strokeStyle=best?st.masses[best.mi].color:line; cctx.lineWidth=1; cctx.stroke();
+      cctx.fillStyle=ink; lines.forEach((l,i)=>cctx.fillText(l,tx+7,ty+12+i*16));
+      cctx.textBaseline="alphabetic";
+    }
+  }
+  // fit report
+  const box=$("#fitres");
+  if(!fit){ box.textContent = kind==="none" ? "בחרו מודל כדי להתאים עקומה לנתונים." : "לא ניתן להתאים את המודל הזה לנתונים."; return; }
+  const R=Rfit;
+  box.innerHTML = `<div class="eq">${EQ}</div>
+    <div class="meta"><span>R² = <b style="font-family:var(--font-num)">${R.toFixed(5)}</b></span><span>${rows.length} נקודות</span><span>u = ${LBL[xk]}</span></div>
+`;
+}
+
+/* ---- chart interaction: drag the labels, read the point under the cursor ---- */
+let chartHover=null, chartDrag=null;
+function chartPos(e){ const r=chart.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+const inRect=(p,r)=>r && p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h;
+chart.addEventListener("pointerdown",e=>{
+  const p=chartPos(e), ui=st.chartUI; if(!ui) return;
+  if(inRect(p,ui.eq)){ chartDrag={what:"eq", dx:p.x-ui.eq.x, dy:p.y-ui.eq.y}; }
+  else if(inRect(p,ui.leg)){ chartDrag={what:"leg", dx:p.x-ui.leg.x, dy:p.y-ui.leg.y}; }
+  if(chartDrag){ chart.setPointerCapture(e.pointerId); chart.style.cursor="grabbing"; }
+});
+chart.addEventListener("pointermove",e=>{
+  const p=chartPos(e), ui=st.chartUI;
+  if(chartDrag){
+    const pos={x:p.x-chartDrag.dx, y:p.y-chartDrag.dy};
+    if(chartDrag.what==="eq") st.eqPos=pos; else st.legPos=pos;
+    chartHover=null; drawChart(); return;
+  }
+  chart.style.cursor = (ui && (inRect(p,ui.eq)||inRect(p,ui.leg))) ? "grab" : "crosshair";
+  chartHover=p; drawChart();
+});
+chart.addEventListener("pointerup",()=>{ chartDrag=null; chart.style.cursor="crosshair"; });
+chart.addEventListener("pointerleave",()=>{ chartHover=null; chartDrag=null; drawChart(); });
+
+/* ================= table + export ================= */
+const KEYS=[["x","x (m)"],["y","y (m)"],["vx","vx (m/s)"],["vy","vy (m/s)"],
+            ["v","|v| (m/s)"],["ax","ax (m/s²)"],["ay","ay (m/s²)"]];
+function colLabel(c){
+  const [mi,k]=c.split(":"); const m=st.masses[+mi]; if(!m) return c;
+  return m.name+" · "+(KEYS.find(K=>K[0]===k)||[k,k])[1];
+}
+function renderMsel(){
+  const sel=$("#msel");
+  sel.innerHTML=st.masses.map((m,i)=>'<option value="'+i+'"'+(i===st.sel?' selected':'')+'>'+m.name+'</option>').join("");
+}
+$("#msel").onchange=()=>{ st.sel=+$("#msel").value; st.tpl=null; st.tplData=null; renderMasses(); refresh(); };
+function renderCols(){
+  renderMsel();
+  const box=$("#colchips");
+  box.innerHTML = st.masses.map((m,mi)=>KEYS.map(([k,lab])=>{
+    const c=mi+":"+k, on=st.cols.includes(c);
+    return '<button class="chip'+(on?' on':'')+'" data-c="'+c+'"'
+      +(on?' style="background:'+m.color+'"':'')+'>'+m.name+' · '+lab+'</button>';
+  }).join("")).join("");
+  const sum=$("#colpick").querySelector("summary");
+  if(sum) sum.textContent="עמודות הטבלה ("+st.cols.length+")";
+}
+$("#colchips").addEventListener("click",e=>{
+  const b=e.target.closest(".chip"); if(!b) return;
+  const c=b.dataset.c, i=st.cols.indexOf(c);
+  if(i<0) st.cols.push(c); else st.cols.splice(i,1);
+  renderCols(); drawTable();
+});
+function tableData(){
+  const cache={}, frames=new Set();
+  st.cols.forEach(c=>{ const mi=+c.split(":")[0];
+    if(!cache[mi]){ cache[mi]={}; series(mi).forEach(r=>{ cache[mi][r.f]=r; }); }
+  });
+  Object.keys(cache).forEach(mi=>Object.keys(cache[mi]).forEach(f=>frames.add(+f)));
+  if(!st.cols.length) series(st.sel).forEach(r=>frames.add(r.f));
+  return {fs:[...frames].sort((a,b)=>a-b), cache};
+}
+function drawTable(){
+  const {fs,cache}=tableData();
+  const head=$("#tbl").querySelector("thead tr");
+  head.innerHTML='<th>פריים</th><th>t (s)</th>'+st.cols.map(c=>{
+    const m=st.masses[+c.split(":")[0]];
+    return '<th style="color:'+(m?m.color:"inherit")+'">'+colLabel(c)+'</th>';
+  }).join("");
+  $("#tbl").querySelector("tbody").innerHTML = fs.map(f=>{
+    let t=null;
+    for(const mi in cache){ if(cache[mi][f]){ t=cache[mi][f].t; break; } }
+    const cells=st.cols.map(c=>{ const [mi,k]=c.split(":"); const r=cache[+mi] && cache[+mi][f];
+      return "<td>"+(r?fmt(r[k]):"—")+"</td>"; }).join("");
+    return '<tr class="'+(f===st.frame?"cur":"")+'"><td>'+f+"</td><td>"+(t!=null?t.toFixed(3):"—")+"</td>"+cells+"</tr>";
+  }).join("");
+}
+const fmt=v=>(v===undefined||!isFinite(v))?"—":(+v).toFixed(3);
+function csv(){
+  const {fs,cache}=tableData();
+  const head=["frame","t"].concat(st.cols.map(colLabel)).join(",");
+  const lines=fs.map(f=>{
+    let t=null; for(const mi in cache){ if(cache[mi][f]){ t=cache[mi][f].t; break; } }
+    const cells=st.cols.map(c=>{ const [mi,k]=c.split(":"); const r=cache[+mi] && cache[+mi][f];
+      const v=r? r[k] : undefined;
+      return (v===undefined||!isFinite(v)) ? "" : (+v).toFixed(6); });
+    return [f, t!=null?t.toFixed(6):""].concat(cells).join(",");
+  });
+  return "\ufeff"+head+"\n"+lines.join("\n");
+}
+async function copy(text){
+  $("#io").value=text;
+  try{ await navigator.clipboard.writeText(text); flash("הועתק ללוח"); }
+  catch(e){ $("#io").select(); flash("סמנו והעתיקו מהתיבה"); }
+}
+let flashT=0;
+function toast(msg){          // sits above the frame and lets clicks through
+  $("#toastmsg").textContent=msg;
+  $("#toast").hidden=false;
+}
+$("#toastx").onclick=()=>{ $("#toast").hidden=true; };
+function flash(msg){
+  clearTimeout(flashT);
+  $("#hint").innerHTML="<b>"+msg+"</b>";
+  flashT=setTimeout(()=>$("#hint").innerHTML=hintHTML(),2400);
+}
+$("#copycsv").onclick=()=>copy(csv());
+function tableRows(){                       // header + rows, as plain values
+  const {fs,cache}=tableData();
+  const head=["פריים","t (s)"].concat(st.cols.map(colLabel));
+  const rows=fs.map(f=>{
+    let t=null; for(const mi in cache){ if(cache[mi][f]){ t=cache[mi][f].t; break; } }
+    return [f, t!=null?+t.toFixed(6):null].concat(st.cols.map(c=>{ const [mi,k]=c.split(":");
+      const r=cache[+mi] && cache[+mi][f]; const v=r? r[k] : undefined;
+      return (v===undefined||!isFinite(v)) ? null : +(+v).toFixed(6); }));
+  });
+  return {head,rows};
+}
+function b64of(blob){
+  return new Promise((res,rej)=>{ const fr=new FileReader();
+    fr.onload=()=>res(String(fr.result).split(",")[1]||""); fr.onerror=rej; fr.readAsDataURL(blob); });
+}
+function androidBridge(){ return (window.AndroidBridge && AndroidBridge.shareFile) ? AndroidBridge : null; }
+async function download(blob,name){
+  const ab=androidBridge();                                  // inside the Android app the system save sheet is used
+  if(ab){ try{ ab.saveFile(name, blob.type||"application/octet-stream", await b64of(blob)); return; }catch(e){} }
+  // inside claude.ai the page asks the viewer through the downloads capability;
+  // on an ordinary web host the plain browser download is used
+  let dl=null;
+  try{ if(window.claude && claude.use) dl=await claude.use("downloads"); }catch(e){ dl=null; }
+  if(dl){
+    try{
+      const bytes=new Uint8Array(await blob.arrayBuffer());       // binary-safe: bytes, not a Blob
+      await dl.save({filename:name, data:bytes}); flash("הקובץ נשמר: "+name);
+    }
+    catch(e){ if(e && e.code==="declined") flash("ההורדה בוטלה"); else flash("ההורדה לא זמינה כאן ("+(e&&e.code||"")+")"); }
+    return;
+  }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  flash("הקובץ נוצר: "+name);
+}
+$("#copytsv").onclick=()=>{ const {head,rows}=tableRows();
+  copy([head].concat(rows).map(r=>r.map(v=>v==null?"":v).join("\t")).join("\n")); };
+$("#dlxlsx").onclick=()=>{
+  if(!window.XLSX){ flash("ספריית Excel לא נטענה"); return; }
+  const {head,rows}=tableRows();
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([head].concat(rows)), "נתונים");
+  const eq=$("#fitres").querySelector(".eq"), r2=$("#fitres").querySelector(".meta b");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ["ציר אנכי", LBL[$("#ysel").value]], ["ציר אופקי", LBL[$("#xsel").value]],
+    ["מודל", $("#model").options[$("#model").selectedIndex].text],
+    ["משוואה", eq? eq.textContent : ""], ["R²", r2? +r2.textContent : ""]]), "משוואה");
+  wb.Props={Title:"מעבדת וידאו", Author:"מעבדת וידאו"};
+  const out=XLSX.write(wb,{bookType:"xlsx",type:"array",compression:true});
+  download(new Blob([out],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),"video-lab.xlsx");
+};
+function chartBlob(){ return new Promise(res=>chart.toBlob(res,"image/png")); }
+$("#dlpng").onclick=async()=>{ download(await chartBlob(),"graph.png"); };
+
+/* ---- one picture with the graph and the table, for sharing ---- */
+function compositeBlob(){
+  return new Promise(res=>{
+    const {head,rows}=tableRows();
+    const W=1200, chartH=Math.round(W*chart.height/chart.width);
+    const rowH=34, maxRows=Math.min(rows.length,40);
+    const H=chartH+40+ (maxRows+1)*rowH + 60;
+    const c=document.createElement("canvas"); c.width=W; c.height=H;
+    const x=c.getContext("2d");
+    x.fillStyle="#fff"; x.fillRect(0,0,W,H);
+    x.drawImage(chart,0,0,W,chartH);
+    // table
+    let y=chartH+30;
+    x.direction="rtl"; x.textAlign="center"; x.textBaseline="middle";
+    const cols=head.length, cw=(W-40)/cols;
+    x.fillStyle="#F3F6F7"; x.fillRect(20,y,W-40,rowH);
+    x.font="600 20px Arial, sans-serif"; x.fillStyle="#14202A";
+    head.forEach((h,i)=>x.fillText(h, W-20-cw*(i+0.5), y+rowH/2));
+    y+=rowH; x.font="20px Arial, sans-serif";
+    for(let r=0;r<maxRows;r++){
+      if(r%2) { x.fillStyle="#FAFBFC"; x.fillRect(20,y,W-40,rowH); }
+      x.fillStyle="#14202A"; x.direction="ltr";
+      rows[r].forEach((v,i)=>x.fillText(v==null?"—":(typeof v==="number"? (i<1? v : v.toFixed(3)) : v), W-20-cw*(i+0.5), y+rowH/2));
+      x.direction="rtl"; y+=rowH;
+    }
+    if(rows.length>maxRows){ x.fillStyle="#5A6B77"; x.font="18px Arial, sans-serif"; x.fillText("… ועוד "+(rows.length-maxRows)+" שורות בקובץ ה-Excel", W/2, y+20); }
+    x.fillStyle="#5A6B77"; x.font="16px Arial, sans-serif"; x.textAlign="left"; x.direction="ltr";
+    x.fillText("מעבדת וידאו · "+new Date().toLocaleDateString("he-IL"), 24, H-20);
+    c.toBlob(res,"image/png");
+  });
+}
+async function shareFile(blob,name,title){
+  const ab=androidBridge();                                  // inside the Android app the native share sheet is used
+  if(ab){ try{ ab.shareFile(name, blob.type||"application/octet-stream", await b64of(blob), title||""); return; }catch(e){} }
+  const file=new File([blob],name,{type:blob.type});
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], title}); flash("נשלח לשיתוף"); return; }
+    catch(e){ if(e && e.name==="AbortError") return; }
+  }
+  download(blob,name);                                   // no share sheet here: the file is saved instead
+}
+$("#sharebtn").onclick=async()=>shareFile(await compositeBlob(),"video-lab.png","מעבדת וידאו — גרף וטבלה");
+$("#shareimg").onclick=async()=>shareFile(await compositeBlob(),"video-lab.png","מעבדת וידאו — גרף וטבלה");
+$("#sharexlsx").onclick=()=>{
+  if(!window.XLSX){ flash("ספריית Excel לא נטענה"); return; }
+  const {head,rows}=tableRows();
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([head].concat(rows)), "נתונים");
+  const out=XLSX.write(wb,{bookType:"xlsx",type:"array",compression:true});
+  shareFile(new Blob([out],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),"video-lab.xlsx","מעבדת וידאו — נתונים");
+};
+$("#copychart").onclick=async()=>{
+  try{ const b=await chartBlob(); await navigator.clipboard.write([new ClipboardItem({"image/png":b})]); flash("הגרף הועתק כתמונה"); }
+  catch(e){ flash("הדפדפן לא מאפשר העתקת תמונה ללוח"); }
+};
+$("#copyjson").onclick=()=>copy(JSON.stringify({
+  v:1, kind:st.kind, demo:st.demo, fps:st.fps, frames:st.frames, step:st.step,
+  cal:st.cal, len:+$("#callen").value, org:st.org, ang:st.ang, fx:st.fx, fy:st.fy, locked:!!st.locked, calLocked:!!st.calLocked, axisColor:INK.axis, in:st.in, out:st.out,
+  cols:st.cols,
+  masses:st.masses.map(m=>({name:m.name, color:m.color,
+    pts:[...m.pts.entries()].map(([f,p])=>[f,+p.x.toFixed(2),+p.y.toFixed(2),p.t!=null?+p.t.toFixed(4):null])}))
+},null,1));
+$("#loadjson").onclick=()=>{
+  try{
+    const d=JSON.parse($("#io").value);
+    st.fps=d.fps; $("#fps").value=d.fps; st.frames=d.frames; $("#fmax").textContent=d.frames;
+    st.step=d.step||1; $("#step").value=st.step;
+    st.in=d.in||0; st.out=d.out||st.frames;
+    st.cal=d.cal; $("#callen").value=d.len; st.org=d.org; st.ang=d.ang||0; st.fx=d.fx||1; st.fy=d.fy||1; st.locked=!!d.locked; st.calLocked=!!d.calLocked; $("#ang").value=st.ang; if(d.axisColor) INK.axis=d.axisColor;
+    commitCal();
+    st.masses=(d.masses||[]).map((m,i)=>({name:m.name||("מסה "+MNAME[i]), color:m.color||MCOL[i%MCOL.length],
+      pts:new Map((m.pts||[]).map(([f,x,y,t])=>[f,{x,y,t:t==null?undefined:t}])), tpl:null, tplData:null}));
+    if(!st.masses.length) addMass();
+    st.sel=0; st.cols=d.cols&&d.cols.length? d.cols : ["0:x","0:y"];
+    renderMasses();
+    goto(0); refresh(); flash("הפרויקט נטען");
+  }catch(e){ flash("לא הצלחתי לקרוא את ה-JSON"); }
+};
+
+/* ================= full-pane toggles ================= */
+$("#fschart").onclick=()=>{
+  const pane=$("#tab-graph"), on=!pane.classList.contains("big-chart");
+  pane.classList.remove("big-table"); $("#fstable").classList.remove("on");
+  pane.classList.toggle("big-chart",on); $("#fschart").classList.toggle("on",on);
+  $("#fschart").textContent = on ? "⛶ חזרה" : "⛶ הגדלת הגרף";
+  drawChart();
+};
+$("#fstable").onclick=()=>{
+  const pane=$("#tab-graph"), on=!pane.classList.contains("big-table");
+  pane.classList.remove("big-chart"); $("#fschart").classList.remove("on");
+  pane.classList.toggle("big-table",on); $("#fstable").classList.toggle("on",on);
+  $("#fstable").textContent = on ? "⛶ חזרה" : "⛶ הגדלת הטבלה";
+  drawChart();
+};
+
+const tipEl=document.createElement("div"); tipEl.id="tip"; tipEl.hidden=true; document.body.appendChild(tipEl);
+/* ================= the instructions dialog ================= */
+const HELP=[
+ {c:"--c-range",n:"0",t:"קביעת תחום הסרטון",
+  pc:"גררו את שני המשולשים הסגולים שמתחת לסרגל הזמן — הימני לתחילת התנועה, השמאלי לסופה. הניתוח, הניגון והמעקב האוטומטי יפעלו רק בתוך התחום שסימנתם.",
+  ph:"גררו באצבע את שני המשולשים הסגולים שעל סרגל הזמן, אחד לתחילת התנועה ואחד לסופה. כל השאר יעבוד רק בתוך התחום הזה."},
+ {c:"--c-axes",n:"1",t:"בחירת הצירים",
+  pc:"לחצו על הסרטון במקום שבו תשב ראשית הצירים. גררו את העיגול שבקצה ציר x או y כדי לסובב את המערכת. לחיצה ימנית על הצירים פותחת תפריט: סיבוב מדויק, היפוך הכיוון החיובי, צבע ונעילה.",
+  ph:"נקישה על הסרטון קובעת את ראשית הצירים. גרירת העיגול שבקצה ציר מסובבת את המערכת. החזקה של שנייה וחצי על הצירים פותחת תפריט: סיבוב, היפוך כיוון, צבע ונעילה."},
+ {c:"--c-scale",n:"2",t:"קנה מידה",
+  pc:"גררו את קצות הסרגל הירוק לשני קצותיו של עצם שאורכו ידוע בסרטון (סרגל, מקל מטר, גובה ידוע). לחצו על התווית שעל הסרגל והקלידו את האורך במטרים. בלי השלב הזה אין יחידות. לחיצה ימנית על הסרגל מאפשרת לנעול אותו.",
+  ph:"גררו באצבע את קצות הסרגל הירוק לשני קצותיו של עצם שאורכו ידוע. נקישה על התווית שעליו פותחת שדה להקלדת האורך במטרים. החזקה ארוכה על הסרגל מאפשרת לנעול אותו."},
+ {c:"--c-mass",n:"3",t:"מעקב ידני",
+  pc:"לחצו על הגוף בכל פריים — הסרטון מתקדם לבד והנקודה נכנסת לגרף ולטבלה. לחיצה ימנית מוחקת נקודה, Ctrl+Z מבטל את האחרונה. להוספת גוף נוסף: כפתור + שבפינת הסרטון.",
+  ph:"נקישה על הגוף בכל פריים — הסרטון מתקדם לבד והנקודה נכנסת לגרף. כפתורי ↶ ו-🗑 שמתחת לסרטון מבטלים נקודה או מנקים הכל. להוספת גוף נוסף: כפתור + שבפינת הסרטון."},
+ {c:"--c-auto",n:"4",t:"מעקב אוטומטי",
+  pc:"גררו מלבן סביב הגוף כך שמרכז המלבן יהיה בדיוק על הנקודה שרוצים לעקוב אחריה. התוכנה תחפש את אותה תבנית פיקסלים בכל פריים בתחום ותמלא את הנקודות לבד. אם היא מאבדת את הגוף — תופיע הודעה ואפשר להמשיך ידנית. חשוב: הצבע של הגוף צריך להיות שונה מהצבע של הרקע — גוף בצבע דומה לרקע התוכנה לא תצליח לזהות.",
+  ph:"גררו באצבע מלבן סביב הגוף, כשמרכז המלבן על הנקודה שרוצים לעקוב אחריה. שחררו והמעקב רץ לבד עד סוף התחום. חשוב: הצבע של הגוף צריך להיות שונה מהצבע של הרקע — גוף בצבע דומה לרקע התוכנה לא תצליח לזהות."}
+];
+const HKEYS={
+ pc:[["רווח","ניגון / עצירה"],["חצים ← →","פריים קדימה ואחורה"],["Ctrl+Z","ביטול הנקודה האחרונה"],
+     ["גלגלת","זום פנימה והחוצה סביב הסמן"],["Alt + גרירה","הזזת התמונה כשהיא מוגדלת"],["לחיצה ימנית","תפריט הצירים או הסרגל"]],
+ ph:[["צביטה","זום פנימה והחוצה"],["גרירה באצבע","הזזת התמונה כשהיא מוגדלת"],["החזקה 1.5 שניות","תפריט הצירים או הסרגל"],
+     ["+ − ⤢","כפתורי הזום שבפינת הסרטון"],["❓ ⓘ","נקישה על ⓘ שליד שלב פותחת את ההסבר שלו"]]
+};
+function renderHelp(mode){
+  document.querySelectorAll(".htabs button").forEach(b=>b.classList.toggle("on",b.dataset.h===mode));
+  $("#helpbody").innerHTML =
+    HELP.map(h=>'<div class="hstep"><span class="n" style="background:var('+h.c+')">'+h.n+'</span>'
+      +'<div><h3>'+h.t+'</h3><p>'+h[mode]+'</p></div></div>').join("")
+    + '<div class="hkeys"><h3>'+(mode==="pc"?"קיצורים":"מחוות מגע")+'</h3>'
+      + HKEYS[mode].map(k=>'<div><b>'+k[0]+'</b> — '+k[1]+'</div>').join("")
+      + '<div style="margin-top:6px">בסיום: לשונית <b>גרף וטבלה</b> מציגה את המשוואה ואת R², ו<b>ייצוא</b> מאפשרת הורדת Excel, תמונה או שיתוף.</div></div>';
+}
+function openHelp(){ $("#help").hidden=false; renderHelp(isPhone()||COARSE ? "ph" : "pc"); }
+function closeHelp(){ $("#help").hidden=true; }
+$("#helpbtn").onclick=openHelp;
+$("#helpbtn2").onclick=openHelp;
+$("#helpx").onclick=closeHelp;
+$("#helpclose").onclick=closeHelp;
+$("#help").addEventListener("click",e=>{ if(e.target.id==="help") closeHelp(); });
+document.querySelectorAll(".htabs button").forEach(b=>b.onclick=()=>renderHelp(b.dataset.h));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("#help").hidden) closeHelp(); });
+
+/* ================= phone: bottom navigation + camera ================= */
+document.querySelectorAll(".mnav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".mnav button").forEach(x=>x.classList.toggle("on",x===b));
+  document.body.dataset.mtab=b.dataset.m;
+  requestAnimationFrame(()=>{ sizeWrap(); drawChart(); drawOverlay(); });
+});
+$("#camfile").onchange=e=>{ const f=e.target.files[0]; if(f) openFile(f); };
+/* in-page recorder: rear camera by default, a WebM with a steady frame rate */
+let recStream=null, recorder=null, recChunks=[], recFacing="environment", recT0=0, recTimer=0;
+async function openRecorder(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+    $("#camfile").click(); return;                 // old browser: the system camera app
+  }
+  $("#recorder").hidden=false;
+  try{ await startCam(); }
+  catch(e){ $("#recorder").hidden=true; $("#camfile").click(); }
+}
+async function startCam(){
+  if(recStream) recStream.getTracks().forEach(t=>t.stop());
+  recStream=await navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:{ideal:recFacing}, width:{ideal:1920}, height:{ideal:1080}, frameRate:{ideal:60} }, audio:true });
+  $("#recprev").srcObject=recStream;
+  $("#rectime").textContent=(recFacing==="environment"?"מצלמה אחורית":"מצלמה קדמית")+" · לחצו ● להקלטה";
+}
+function closeRecorder(){
+  clearInterval(recTimer);
+  if(recorder && recorder.state!=="inactive") recorder.stop();
+  if(recStream) recStream.getTracks().forEach(t=>t.stop());
+  recStream=null; recorder=null; $("#recorder").hidden=true;
+}
+$("#cambtn").onclick=openRecorder;
+$("#cambtn2").onclick=openRecorder;
+$("#filebtn2").onclick=()=>$("#file").click();
+$("#close2").onclick=()=>$("#close").click();
+$("#reccancel").onclick=closeRecorder;
+$("#recflip").onclick=async()=>{ recFacing = recFacing==="environment" ? "user" : "environment"; try{ await startCam(); }catch(e){} };
+$("#recbtn").onclick=()=>{
+  if(!recStream) return;
+  if(recorder && recorder.state==="recording"){ recorder.stop(); return; }
+  recChunks=[];
+  const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm","video/mp4"].find(m=>MediaRecorder.isTypeSupported(m))||"";
+  recorder=new MediaRecorder(recStream, mime?{mimeType:mime, videoBitsPerSecond:8e6}:{});
+  recorder.ondataavailable=e=>{ if(e.data.size) recChunks.push(e.data); };
+  recorder.onstop=()=>{
+    clearInterval(recTimer); $("#recbtn").classList.remove("on");
+    const blob=new Blob(recChunks,{type:recorder.mimeType||"video/webm"});
+    const ext=/mp4/.test(blob.type)?"mp4":"webm";
+    const f=new File([blob],"clip-"+new Date().toISOString().slice(11,19).replace(/:/g,"")+"."+ext,{type:blob.type});
+    closeRecorder(); openFile(f);
+  };
+  recorder.start(100); recT0=Date.now(); $("#recbtn").classList.add("on");
+  recTimer=setInterval(()=>{ $("#rectime").textContent="● מקליט · "+((Date.now()-recT0)/1000).toFixed(1)+" s · לחצו שוב לעצירה"; },100);
+};
+// tapping ⓘ on a phone (no hover) toggles the tip
+document.addEventListener("click",e=>{
+  const i=e.target.closest(".info"); if(!i) return;
+  e.preventDefault(); e.stopPropagation();
+  if(!tipEl.hidden && tipEl.textContent===i.dataset.tip){ tipEl.hidden=true; return; }
+  tipEl.textContent=i.dataset.tip; tipEl.hidden=false;
+  const r=i.getBoundingClientRect();
+  tipEl.style.top=Math.min(window.innerHeight-tipEl.offsetHeight-8, r.bottom+6)+"px";
+  tipEl.style.left=Math.max(6, Math.min(window.innerWidth-tipEl.offsetWidth-6, r.left-120))+"px";
+},true);
+
+/* ================= ⓘ tooltips ================= */
+document.addEventListener("mouseover",e=>{
+  const i=e.target.closest("[data-tip]"); if(!i){ tipEl.hidden=true; return; }
+  if(COARSE && !i.classList.contains("info")) return;      // buttons on a phone: no hover
+  tipEl.textContent=i.dataset.tip; tipEl.hidden=false;
+  const r=i.getBoundingClientRect();
+  if(i.classList.contains("info")){
+    tipEl.style.top=Math.max(6,Math.min(window.innerHeight-tipEl.offsetHeight-6, r.top-4))+"px";
+    tipEl.style.left=Math.max(6, r.left-tipEl.offsetWidth-10)+"px";
+  } else {                                                  // above the button, centred
+    tipEl.style.left=Math.max(6,Math.min(window.innerWidth-tipEl.offsetWidth-6, r.left+r.width/2-tipEl.offsetWidth/2))+"px";
+    tipEl.style.top=Math.max(6, r.top-tipEl.offsetHeight-8)+"px";
+  }
+});
+document.addEventListener("mouseout",e=>{ if(e.target.closest && e.target.closest("[data-tip]")) tipEl.hidden=true; });
+
+/* ================= tabs ================= */
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".tabpane").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); $("#tab-"+b.dataset.tab).classList.add("on");
+  if(b.dataset.tab==="graph") drawChart();
+});
+["#ysel","#xsel","#model"].forEach(s=>$(s).onchange=drawChart);
+
+/* ================= refresh ================= */
+function sizeWrap(){                       // the frame box gets explicit dimensions (its content scrolls)
+  const hold=document.querySelector(".stage-holder");
+  const W=hold.clientWidth, H=hold.clientHeight; if(W<10||H<10) return;
+  const ar=(st.kind==="video" && video.videoHeight) ? video.videoWidth/video.videoHeight : 16/9;
+  let w=W, h=w/ar; if(h>H){ h=H; w=h*ar; }
+  wrap.style.width=Math.floor(w)+"px"; wrap.style.height=Math.floor(h)+"px";
+  applyZoom(); drawOverlay();
+}
+function fitLayout(){
+  const lay=document.querySelector(".main");
+  if(window.innerWidth<=1000 || isPhone()){ lay.style.gridTemplateColumns=""; requestAnimationFrame(sizeWrap); return; }
+  const RAIL=186, GAP=20;
+  const total=lay.clientWidth, h=lay.clientHeight;
+  const ar=(st.kind==="video" && video.videoHeight) ? video.videoWidth/video.videoHeight : 16/9;
+  let w=Math.round(h*ar)+2;                       // width that makes the frame fill the height
+  w=Math.max(260, Math.min(w, total-RAIL-GAP-360));   // the video gets everything the panel does not need
+  lay.style.gridTemplateColumns=RAIL+"px "+w+"px minmax(320px,1fr)";
+  requestAnimationFrame(sizeWrap);
+}
+function refresh(){
+  $("#npts").textContent=P().size;
+  $("#v3").textContent=M()? (M().name+" · "+P().size+" נק׳") : "—";
+  $("#v1").textContent = st.kind==="none" ? "—"
+      : (st.ang? "ראשית · "+st.ang+"°" : "ראשית מוגדרת");
+  $("#s1").classList.toggle("done", st.kind!=="none" && !!st.orgSet);
+  $("#s2").classList.toggle("done", !!st.scale);
+  $("#s3").classList.toggle("done", P().size>1);
+  $("#s0").classList.toggle("done", st.kind!=="none" && (st.in>0 || st.out<st.frames));
+  $("#s4").classList.toggle("done", P().size>1 && !!st.tplData);
+  $("#v4").textContent = tracking ? "עוקב…" : (st.tplData? "תבנית מוכנה" : "בחירת תבנית");
+  drawTimeline();
+  tagScale();
+  fitLayout(); updateMassMeta(); renderCols(); drawOverlay(); drawChart(); drawTable();
+}
+function relayout(){ fitLayout(); sizeWrap(); drawOverlay(); drawChart(); drawTimeline(); syncLabelEditor(); closeMenu(); }
+window.addEventListener("resize",relayout);
+window.addEventListener("orientationchange",()=>{ [50,250,600].forEach(ms=>setTimeout(relayout,ms)); });
+if(window.ResizeObserver) new ResizeObserver(()=>drawTimeline()).observe($("#tl"));
+if(window.ResizeObserver){
+  new ResizeObserver(()=>drawChart()).observe($("#chartbox"));
+  new ResizeObserver(()=>sizeWrap()).observe(document.querySelector(".stage-holder"));
+}
+if(window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>drawChart());
+
+/* ================= step guide: instruction cards pinned to a bobbing arrow ================= */
+let gChk=0;                                        // the ⏮ ▶ ⏮ boundary check
+$("#first").addEventListener("click",()=>{ gChk = (gChk===2 ? 3 : 1); });
+$("#play").addEventListener("click",()=>{ if(gChk===1) gChk=2; });
+
+const GSTEPS=[
+ {ttl:"ברוכים הבאים", b:"נעבור יחד שלב אחר שלב. החץ הוורוד מצביע על מה שצריך לעשות עכשיו, וכשצריך גרירה — יד מדגימה אותה על המסך. נתקעתם באמצע? כפתור «נתקעתי» יחזיר אתכם לשלב הנכון.", sel:[]},
+ {ttl:"טעינת סרטון", b:"לחצו על «טעינת סרטון…» ובחרו קליפ מהמכשיר, או על «צילום» כדי לצלם עכשיו.",
+   sel:["#filebtn2","header label.filebtn.primary"], hint:"ממתין לטעינת סרטון…",
+   snap:()=>st.kind, done:n=>st.kind==="video"&&n!=="video", ok:()=>st.kind==="video"},
+ {ttl:"סרטון לא נכון?", b:"בכל רגע אפשר ללחוץ «סגירת הסרטון» ולבחור קובץ אחר. אם הסרטון הנוכחי מתאים — המשיכו.",
+   sel:["#close2","#close"]},
+ {id:"range", ttl:"שלב 0 · משולש 1 מתוך 2", b:"גררו את המשולש השמאלי בסרגל הזמן אל הפריים שבו התנועה מתחילה. אחריו נטפל במשולש השני.",
+   sel:["#tlin"], hint:"ממתין למשולש השמאלי…", say:"משולש 1 מתוך 2 — תחילת התנועה",
+   demo:()=>gDragDemo("tlin","גררו את המשולש השמאלי",""),
+   snap:()=>st.in, done:n=>st.in!==n, ok:()=>st.in>0},
+ {ttl:"שלב 0 · משולש 2 מתוך 2", b:"מצוין. עכשיו המשולש הימני — גררו אותו אל הפריים שבו התנועה מסתיימת.",
+   sel:["#tlout"], hint:"ממתין למשולש הימני…", say:"משולש 2 מתוך 2 — סוף התנועה",
+   demo:()=>gDragDemo("tlout","עכשיו המשולש הימני",""),
+   snap:()=>st.out, done:n=>st.out!==n, ok:()=>st.frames>1 && st.out<st.frames-1},
+ {ttl:"בדקו את הגבולות", b:"שלוש לחיצות לפי הסדר: ⏮ לחזרה לתחילת התחום, ▶ לצפייה בתנועה, ושוב ⏮ לחזרה. אם התחום לא מדויק — חזרו אחורה והזיזו את המשולשים.",
+   sel:()=>[gChk===1?"#play":"#first"],
+   hint:()=>gChk===0?"שלב 1 מתוך 3: לחצו ⏮":(gChk===1?"שלב 2 מתוך 3: לחצו ▶":"שלב 3 מתוך 3: לחצו שוב ⏮"),
+   say:()=>gChk===0?"לחצו ⏮":(gChk===1?"עכשיו ▶ — צפו בתנועה":"ולסיום שוב ⏮"),
+   snap:()=>{ gChk=0; return 0; }, done:()=>gChk>=3},
+ {id:"axes", ttl:"שלב 1 · ראשית הצירים", b:"לחצו על «1 בחירת צירים», ואז החליטו איפה תשב ראשית הצירים ולחצו שם על הסרטון — בדרך כלל במקום שבו התנועה מתחילה.",
+   sel:["#s1"], hint:"ממתין לקביעת הראשית…",
+   say:()=>st.orgSet?"יופי! הראשית נקבעה":"איפה תשב ראשית הצירים? לחצו על הנקודה בסרטון",
+   sayGood:()=>!!st.orgSet,
+   snap:()=>[!!st.orgSet,st.org.x,st.org.y], done:n=>!!st.orgSet&&(!n[0]||st.org.x!==n[1]||st.org.y!==n[2]), ok:()=>!!st.orgSet},
+ {ttl:"דיוק הצירים", b:"לא מרוצים מהמיקום? גררו את ראשית הצירים למקום אחר. לסיבוב — גררו בעכבר את העיגול שבקצה אחת הזרועות. בלחיצה ימנית (בפלאפון: לחיצה ארוכה) יש זווית מדויקת, החזרה ל-0°, היפוך הכיוון החיובי ובחירת צבע. כשהכול מדויק — המשיכו.",
+   sel:["#ang"], at:()=>gFramePt(0.5,0.5)},
+ {ttl:"נעלו את הצירים", b:"עכשיו שהצירים במקום — נעלו אותם כדי שלא יזוזו בטעות: לחיצה ימנית על הצירים ← «נעילת הצירים». בפלאפון — לחיצה ארוכה של שנייה וחצי.",
+   sel:["#cmenu [data-act='lock']"], hint:"ממתין לנעילת הצירים…", say:"נעלו את הצירים לפני שממשיכים",
+   snap:()=>!!st.locked, done:()=>!!st.locked, ok:()=>!!st.locked},
+ {id:"scale", ttl:"שלב 2 · מתיחת הסרגל", b:"לחצו «2 קנה מידה». עכשיו בחרו עצם שאורכו ידוע בסרטון — סרגל, שולחן, גובה אדם — לחצו על קצה אחד שלו וגררו עד הקצה השני, בדיוק כמו שהיד מדגימה. אפשר גם לתפוס כל קצה של הסרגל הירוק ולדייק אותו.",
+   sel:["#s2"], hint:"ממתין למתיחת הסרגל הירוק…", say:"גררו מקצה אחד של המרחק הידוע עד הקצה השני",
+   demo:()=>gCalDemo(),
+   snap:()=>st.cal?st.cal.x1+","+st.cal.y1+","+st.cal.x2+","+st.cal.y2:"",
+   done:n=>(st.cal?st.cal.x1+","+st.cal.y1+","+st.cal.x2+","+st.cal.y2:"")!==n,
+   ok:()=>!!st.calLocked || (!!st.cal && (st.cal.y1!==st.cal.y2 || $("#callen").value!=="1"))},
+ {ttl:"שלב 2 · האורך במטרים", b:"היד מצביעה על המספר שעל הסרגל — לחצו עליו והקלידו את האורך האמיתי של אותו עצם במטרים. זה מה שמתרגם פיקסלים למטרים; בלי זה כל המספרים יהיו שגויים.",
+   sel:["#callen"], at:gLabelPt, hint:"ממתין להקלדת האורך…", say:"לחצו על המספר שעל הסרגל והקלידו את האורך",
+   demo:()=>gTapDemo(gLabelPt(),"לחצו כאן והקלידו"),
+   snap:()=>[$("#callen").value, st.scale], done:n=>$("#callen").value!==n[0]||st.scale!==n[1],
+   ok:()=>!!st.calLocked || $("#callen").value!=="1"},
+ {ttl:"נעלו את הסרגל", b:"לחיצה ימנית על הסרגל הירוק ← «נעילת הסרגל». בפלאפון — לחיצה ארוכה על הסרגל.",
+   sel:["#cmenu [data-act='callock']"], hint:"ממתין לנעילת הסרגל…", say:"נעלו את הסרגל",
+   snap:()=>!!st.calLocked, done:()=>!!st.calLocked, ok:()=>!!st.calLocked},
+ {ttl:"איך נסמן את התנועה?", b:"יש שתי דרכים — ידנית או אוטומטית. בחרו אחת מהן.", sel:[], ask:1},
+ {id:"manual", ttl:"שלב 3 · מעקב ידני", b:"לחצו «3 מעקב ידני», ואז לחצו על הגוף שאתם רוצים לעקוב אחריו — על אותה נקודה בדיוק בכל פריים.",
+   sel:["#s3"], hint:"ממתין לשלוש נקודות…",
+   say:()=>P().size===0?"איפה הגוף שאתם רוצים לעקוב אחריו? לחצו עליו":"יופי! הסרטון מתקדם אוטומטית בכל לחיצה — המשיכו ללחוץ על אותה נקודה בכל פריים עד סוף התנועה",
+   sayGood:()=>P().size>0,
+   snap:()=>P().size, done:n=>P().size>=n+3, ok:()=>P().size>=3, branch:"man"},
+ {id:"auto", ttl:"שלב 4 · מעקב אוטומטי", b:"לחצו «4 מעקב אוטומטי» וגררו מלבן סביב הגוף, כך שמרכזו יושב על הנקודה שרוצים לעקוב אחריה. התוכנה תחפש את אותה תבנית פיקסלים בכל הפריימים הבאים; אם היא מאבדת את הגוף — תקבלו הודעה ותוכלו לסמן מחדש. חשוב: הצבע של הגוף צריך להיות שונה מהצבע של הרקע — גוף בצבע דומה לרקע התוכנה לא תצליח לזהות.",
+   sel:["#s4"], hint:"ממתין לנקודות מהמעקב…", say:"סמנו מלבן סביב הגוף — המרכז על הנקודה שעוקבים אחריה. הגוף צריך להיות בצבע שונה מהרקע",
+   snap:()=>P().size, done:n=>P().size>=n+3, ok:()=>P().size>=3, branch:"auto"},
+ {ttl:"טעות בסימון?", b:"↶ מבטל את הנקודה האחרונה (גם Ctrl+Z), 🗑 מנקה את כל הנקודות של המסה.", sel:["#undobtn"]},
+ {ttl:"עוד גוף? (רשות)", b:"השלב הזה נחוץ רק אם בסרטון יש שני גופים או יותר שרוצים לעקוב אחרי כולם — למשל שתי עגלות שמתנגשות. אז לוחצים על + שעל הסרטון, נותנים שם לכל מסה, ועוקבים אחרי כל אחת בנפרד; לחיצה על שם מסה בוחרת אותה למעקב. גוף אחד? דלגו הלאה.",
+   sel:["#addm",".mchips"], tab:"video"},
+ {ttl:"הגרף · הציר האנכי", b:"כאן בוחרים מה יוצג בציר האנכי: מיקום x או y, מהירות, או תאוצה. זה הגודל שנחקור.",
+   sel:["#ysel"], tab:"graph", pane:"graph"},
+ {ttl:"הגרף · הציר האופקי", b:"וכאן בוחרים את הציר האופקי: זמן, או אחד המיקומים. למשל y כפונקציה של t, או y כפונקציה של x למסלול.",
+   sel:["#xsel"], tab:"graph", pane:"graph"},
+ {ttl:"הגרף · מודל להתאמה", b:"בחרו קווי, פרבולי או סינוס — המשוואה ומקדם ההתאמה R² יופיעו על הגרף. אם יש כמה מסות, בוחרים כאן לאיזו מהן מתאימים.",
+   sel:["#model"], tab:"graph", pane:"graph"},
+ {ttl:"ייצוא לאקסל", b:"בלשונית «ייצוא» נמצא כפתור «הורדת קובץ Excel» — הקובץ כולל את הטבלה ואת המשוואה. לידו אפשר להוריד גם את הגרף כתמונה.",
+   sel:["#dlxlsx"], tab:"graph", pane:"io"},
+ {ttl:"שיתוף", b:"כאן משתפים את הגרף והטבלה כתמונה אחת או את קובץ האקסל — בטלפון ייפתח חלון השיתוף של המכשיר (וואטסאפ, מייל), ובמחשב הקובץ יישמר.",
+   sel:["#shareimg"], tab:"graph", pane:"io"},
+ {ttl:"זהו, סיימתם", b:"עכשיו תורכם לחקור: שנו צירים, בדקו איזה מודל מתאים, והשוו בין גופים. בהצלחה!",
+   sel:[], last:1}
+];
+
+let gOn=false, gi=0, gBranch="man", gTarget=null, gPoll=0, gSnap=null, gAlready=false, gAnim=null, gDemoKey="";
+function gFramePt(fx,fy){ const r=ov.getBoundingClientRect(); if(r.width<40) return null;
+  return {x:r.left+r.width*fx, y:r.top+r.height*fy}; }
+function gDragDemo(which,noteA,noteB){                 // a triangle on the timeline
+  const trk=$("#tltrack").getBoundingClientRect(), el=document.querySelector("#"+which);
+  if(!el || trk.width<40) return null;
+  const r=el.getBoundingClientRect(); if(r.width<2) return null;
+  const y=r.top+r.height/2, d=trk.width*0.22, x=r.left+r.width/2;
+  return {kind:"drag", x1:x, y1:y, x2:(which==="tlin"?x+d:x-d), y2:y, a:noteA, b:noteB};
+}
+function gCalDemo(){                                   // end to end of a known object
+  const r=ov.getBoundingClientRect(); if(r.width<60) return null;
+  const y=r.top+r.height*0.62;
+  return {kind:"drag", x1:r.left+r.width*0.27, y1:y, x2:r.left+r.width*0.73, y2:y,
+          a:"גררו מקצה אחד של המרחק הידוע", b:"ועד הקצה השני"};
+}
+function gTapDemo(pt,note){ return pt ? {kind:"tap", x1:pt.x, y1:pt.y, x2:pt.x, y2:pt.y, a:note, b:""} : null; }
+function gDemo(pts){
+  const d=$("#gdemo"), path=$("#gpath"), f=$("#gfing");
+  const nA=$("#gnoteA"), nB=$("#gnoteB");
+  const key=pts ? [pts.kind,pts.x1,pts.y1,pts.x2,pts.y2,pts.a,pts.b].map(v=>typeof v==="number"?Math.round(v):v).join(",") : "";
+  if(key===gDemoKey) return;
+  gDemoKey=key;
+  if(gAnim){ gAnim.cancel(); gAnim=null; }
+  if(!pts){ d.hidden=true; return; }
+  d.hidden=false;
+  const dx=pts.x2-pts.x1, dy=pts.y2-pts.y1, tap=(pts.kind==="tap");
+  path.hidden=tap;
+  path.style.left=pts.x1+"px"; path.style.top=pts.y1+"px";
+  path.style.width=Math.hypot(dx,dy)+"px";
+  path.style.transform="rotate("+(Math.atan2(dy,dx)*180/Math.PI)+"deg)";
+  const put=(el,txt,x,y)=>{ if(!txt){ el.hidden=true; return; }
+    el.hidden=false; el.textContent=txt;
+    el.style.left=Math.max(80,Math.min(innerWidth-80,x))+"px";
+    el.style.top=Math.max(26,Math.min(innerHeight-26,y))+"px"; };
+  put(nA, pts.a, pts.x1, pts.y1-36);
+  put(nB, pts.b, pts.x2, pts.y2+36);
+  if(tap){
+    const at=sc=>"translate("+pts.x1+"px,"+pts.y1+"px) translate(-50%,-50%) scale("+sc+")";
+    try{ gAnim=f.animate([{transform:at(1),opacity:.4},{transform:at(1.45),opacity:1},{transform:at(1),opacity:.4}],
+                         {duration:1400,iterations:Infinity,easing:"ease-in-out"}); }catch(e){}
+    return;
+  }
+  const at=(x,y,sc)=>"translate("+x+"px,"+y+"px) translate(-50%,-50%) scale("+sc+")";
+  try{
+    gAnim=f.animate([
+      {transform:at(pts.x1,pts.y1,1),   opacity:0,   offset:0},
+      {transform:at(pts.x1,pts.y1,1.3), opacity:1,   offset:0.13},
+      {transform:at(pts.x2,pts.y2,1.3), opacity:1,   offset:0.74},
+      {transform:at(pts.x2,pts.y2,1),   opacity:0.7, offset:0.9},
+      {transform:at(pts.x2,pts.y2,1),   opacity:0,   offset:1}
+    ],{duration:2600,iterations:Infinity,easing:"ease-in-out"});
+  }catch(e){ f.style.transform=at(pts.x2,pts.y2,1); }
+}
+function gFind(sel){ for(const q of (sel||[])){ const el=document.querySelector(q);
+  if(el && el.offsetParent!==null){ const r=el.getBoundingClientRect(); if(r.width>3&&r.height>3) return el; } } return null; }
+function gVal(v){ return (typeof v==="function") ? v() : v; }
+function gLabelPt(){                                  // the length label drawn on the green stick
+  if(!st.labelBox) return null;
+  const r=ov.getBoundingClientRect(); if(r.width<10) return null;
+  const k=ov.width/r.width, b=st.labelBox;
+  return {x:r.left+(b.x+b.w/2)/k, y:r.top+(b.y+b.h/2)/k};
+}
+let gFree=false, gDrag=null;                           // the student may drag the card out of the way
+(function(){
+  const head=$("#ghead"), tip=$("#gtip");
+  head.addEventListener("pointerdown",e=>{
+    const r=tip.getBoundingClientRect();
+    gDrag={dx:e.clientX-r.left, dy:e.clientY-r.top};
+    gFree=true; $("#gsnap").hidden=false; tip.classList.add("dragging");
+    head.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  head.addEventListener("pointermove",e=>{
+    if(!gDrag) return;
+    const w=tip.offsetWidth, h=tip.offsetHeight;
+    tip.style.left=Math.max(6,Math.min(innerWidth-w-6, e.clientX-gDrag.dx))+"px";
+    tip.style.top =Math.max(6,Math.min(innerHeight-h-6, e.clientY-gDrag.dy))+"px";
+  });
+  const end=()=>{ gDrag=null; tip.classList.remove("dragging"); };
+  head.addEventListener("pointerup",end); head.addEventListener("pointercancel",end);
+  $("#gsnap").onclick=()=>{ gFree=false; $("#gsnap").hidden=true; gPlace(); };
+})();
+function gPlace(){
+  const s=GSTEPS[gi], p=$("#gpoint"), tip=$("#gtip");
+  if(!gOn||!s){ p.hidden=true; gDemo(null); return; }
+  gDemo(s.demo ? s.demo() : null);
+  const say=$("#gsay"), stxt=gVal(s.say);
+  if(stxt){ const fr=ov.getBoundingClientRect();
+    say.hidden=false; say.textContent=stxt;
+    say.classList.toggle("good", !!(s.sayGood && s.sayGood()));
+    const inFrame = fr.width>60 && fr.top<innerHeight-40;
+    say.style.left=(inFrame ? fr.left+fr.width/2 : innerWidth/2)+"px";
+    say.style.top=(inFrame ? Math.max(10, fr.top+12) : 70)+"px";
+  } else say.hidden=true;
+  const el=gFind(gVal(s.sel));
+  if(el!==gTarget){ if(gTarget) gTarget.classList.remove("gtarget"); gTarget=el; if(el) el.classList.add("gtarget"); }
+  const spot = el ? null : (s.at ? s.at() : null);
+  const tw=tip.offsetWidth||300, th=tip.offsetHeight||150;
+  const fixed=gFree;
+  const hb=document.querySelector("header.topbar");
+  const headY=(hb?hb.getBoundingClientRect().bottom:0)+10;
+  if(!el && !spot){                                   // no target: a card under the toolbar
+    p.hidden=true;
+    if(!fixed){ tip.style.left=Math.round((innerWidth-tw)/2)+"px";
+                tip.style.top=Math.round(Math.min(headY, innerHeight-th-10))+"px"; }
+    return;
+  }
+  const r = el ? el.getBoundingClientRect()
+               : {left:spot.x-22,right:spot.x+22,top:spot.y-16,bottom:spot.y+16,width:44,height:32};
+  if(r.right<4||r.left>innerWidth-4||r.bottom<4||r.top>innerHeight-4){ p.hidden=true; }
+  else {
+    const below=r.top < th+58;                        // not enough room above: arrow under the target
+    const cx=Math.max(18,Math.min(innerWidth-18, r.left+r.width/2));
+    const cy=below ? r.bottom+4 : r.top-42;
+    p.hidden=false; p.classList.toggle("up",below);
+    p.style.left=cx+"px"; p.style.top=Math.max(4,Math.min(innerHeight-44,cy))+"px";
+    // the card goes beyond the arrow, and never on top of the target itself
+    const clampX=v=>Math.max(8,Math.min(innerWidth-tw-8,v));
+    const clampY=v=>Math.max(8,Math.min(innerHeight-th-8,v));
+    const hits=(x,y)=>!(x+tw<r.left-8 || x>r.right+8 || y+th<r.top-8 || y>r.bottom+8);
+    const cands=[];
+    cands.push([clampX(cx-tw/2), r.top-th-46]);        // above the arrow
+    cands.push([clampX(cx-tw/2), r.bottom+46]);        // below the arrow
+    cands.push([r.right+14, clampY(r.top-10)]);        // to the right
+    cands.push([r.left-tw-14, clampY(r.top-10)]);      // to the left
+    let tx=clampX(cx-tw/2), ty=clampY(below ? r.bottom+46 : r.top-46-th), placed=false;
+    for(const [x,y] of cands){
+      if(x<8 || x>innerWidth-tw-8 || y<8 || y>innerHeight-th-8) continue;
+      if(hits(x,y)) continue;
+      tx=x; ty=y; placed=true; break;
+    }
+    if(!placed){                                       // nothing fits cleanly: pick the roomiest side
+      const room=[[r.top-8,[clampX(cx-tw/2), clampY(r.top-th-12)]],
+                  [innerHeight-r.bottom-8,[clampX(cx-tw/2), clampY(r.bottom+12)]],
+                  [innerWidth-r.right-8,[clampX(r.right+12), clampY(r.top)]],
+                  [r.left-8,[clampX(r.left-tw-12), clampY(r.top)]]];
+      room.sort((a,b)=>b[0]-a[0]); tx=room[0][1][0]; ty=room[0][1][1];
+    }
+    if(!fixed){ tip.style.left=Math.round(tx)+"px"; tip.style.top=Math.round(ty)+"px"; }
+  }
+}
+function gGo(i,force){
+  for(;;){                                              // skip the other branch, and anything already done
+    const c=GSTEPS[i];
+    if(!c) break;
+    if(c.branch && c.branch!==gBranch){ i++; continue; }
+    if(!force && c.ok && c.ok()){ i++; continue; }
+    break;
+  }
+  if(!GSTEPS[i]){ gStop(); return; }
+  gi=i; const s=GSTEPS[i];
+  gSnap = s.snap ? s.snap() : null;
+  gAlready = s.ok ? !!s.ok() : false;
+  $("#gtip").hidden=false; $("#gask").hidden=true;
+  $("#gnum").textContent=(i+1)+"/"+GSTEPS.length;
+  $("#gttl").textContent=s.ttl;
+  $("#gbody").textContent=gVal(s.b);
+  $("#gtip").classList.remove("done");
+  const hint=$("#gdone");
+  if(s.done && !gAlready){ hint.hidden=false; hint.textContent="⏳ "+(gVal(s.hint)||"ממתין לביצוע…"); }
+  else hint.hidden=true;
+  $("#gnext").textContent = s.last ? "סיום" : (s.ask ? "בחירה" : (s.done&&!gAlready ? "דילוג ›" : "הבא ›"));
+  if(s.tab && isPhone()){
+    const nb=document.querySelector('.mnav button[data-m="'+s.tab+'"]');
+    if(nb && !nb.classList.contains("on")) nb.click();
+  }
+  if(s.pane){
+    const pb=document.querySelector('.tabs button[data-tab="'+s.pane+'"]');
+    if(pb && !pb.classList.contains("on")) pb.click();
+  }
+  const tel=gFind(gVal(s.sel));
+  if(tel){ try{ tel.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"}); }catch(e){} }
+  requestAnimationFrame(gPlace);
+  gSpeak(i);
+  if(s.ask) $("#gask").hidden=false;
+}
+const VOICE=["voice-01.m4a","voice-02.m4a","voice-03.m4a","voice-04.m4a","voice-05.m4a","voice-06.m4a","voice-07.m4a","voice-08.m4a","voice-09.m4a","voice-10.m4a","voice-11.m4a","voice-12.m4a","voice-13.m4a","voice-14.m4a","voice-15.m4a","voice-16.m4a","voice-17.m4a","voice-18.m4a","voice-19.m4a","voice-20.m4a","voice-21.m4a","voice-22.m4a","voice-23.m4a"];
+let gFlash=false, gSound=true, gAC=null;
+const gau=$("#gaudio");
+function gSpeak(i){                                     // the recorded explanation for this step
+  try{ gau.pause(); }catch(e){}
+  if(!gSound || !VOICE[i]) return;
+  try{ gau.src=VOICE[i]; gau.currentTime=0; const pr=gau.play(); if(pr&&pr.catch) pr.catch(()=>{}); }catch(e){}
+}
+function gHush(){ try{ gau.pause(); }catch(e){} }
+function gDing(final){                                  // a gentle "task done" chime
+  if(!gSound) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    gAC = gAC || new AC();
+    if(gAC.state==="suspended") gAC.resume();
+    const t=gAC.currentTime, notes = final ? [[659.3,0],[880,0.12],[1318.5,0.24]] : [[880,0],[1318.5,0.1]];
+    notes.forEach(([f,dt])=>{
+      const o=gAC.createOscillator(), g=gAC.createGain();
+      o.type="sine"; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001, t+dt);
+      g.gain.exponentialRampToValueAtTime(0.075, t+dt+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dt+0.38);
+      o.connect(g); g.connect(gAC.destination);
+      o.start(t+dt); o.stop(t+dt+0.42);
+    });
+  }catch(e){}
+}
+function gDoneFlash(){                                  // a visible "done" beat between steps
+  if(gFlash) return;
+  gFlash=true;
+  const tip=$("#gtip"), h=$("#gdone");
+  gDing(false);
+  tip.classList.add("done"); h.hidden=false; h.textContent="✔ יופי! ממשיכים…";
+  $("#gpoint").hidden=true; $("#gsay").hidden=true; gDemo(null);
+  const at=gi;
+  const advance=()=>{ if(!gFlash || gi!==at) return; gau.removeEventListener("ended",advance);
+    gFlash=false; tip.classList.remove("done"); if(gOn) gGo(gi+1); };
+  setTimeout(()=>{
+    const talking = gSound && !gau.paused && !gau.ended && gau.currentTime>0;
+    if(!talking){ advance(); return; }
+    h.textContent="✔ יופי! עוד רגע ממשיכים…";
+    gau.addEventListener("ended",advance);                       // let the sentence finish
+    const left=isFinite(gau.duration) ? (gau.duration-gau.currentTime) : 20;
+    setTimeout(advance, Math.min(30, Math.max(0,left))*1000+600); // and never hang if audio stalls
+  },900);
+}
+function gStepIndex(id){ for(let i=0;i<GSTEPS.length;i++) if(GSTEPS[i].id===id) return i; return 0; }
+function gWhereAmI(){                                   // the first thing the student has not done yet
+  for(let i=0;i<GSTEPS.length;i++){
+    const s=GSTEPS[i];
+    if(s.branch && s.branch!==gBranch) continue;
+    if(s.ok && !s.ok()) return i;
+  }
+  return GSTEPS.length-1;
+}
+function gStartAt(i,force){ if(!gOn) gStart(true); gGo(Math.max(0,Math.min(GSTEPS.length-1,i)), force); }
+function gStart(quiet){
+  gOn=true; clearInterval(gPoll);
+  try{ const AC=window.AudioContext||window.webkitAudioContext;        // unlock audio on this gesture
+       if(AC){ gAC=gAC||new AC(); if(gAC.state==="suspended") gAC.resume(); } }catch(e){}
+  gPoll=setInterval(()=>{ if(!gOn || gFlash) return; gPlace();
+    const s=GSTEPS[gi]; if(!s) return;
+    if(s.done && !gAlready){ const h=$("#gdone"), t="⏳ "+(gVal(s.hint)||"ממתין לביצוע…");
+      if(h.textContent!==t) h.textContent=t; }
+    if(s.done && s.done(gSnap)) gDoneFlash();
+  },250);
+  if(!quiet) gGo(0);
+}
+function gStop(){
+  gOn=false; clearInterval(gPoll);
+  if(gTarget){ gTarget.classList.remove("gtarget"); gTarget=null; }
+  $("#gpoint").hidden=true; $("#gtip").hidden=true; $("#gask").hidden=true;
+  $("#gsay").hidden=true; gDemo(null); gHush();
+}
+$("#gnext").onclick=()=>{
+  if(gFlash){ gFlash=false; $("#gtip").classList.remove("done"); }
+  const s=GSTEPS[gi];
+  if(s && s.ask && $("#gask").hidden){ $("#gask").hidden=false; return; }
+  if(s && s.last){ gDing(true); gStop(); } else gGo(gi+1);
+};
+$("#gclose").onclick=gStop;
+$("#greplay").onclick=()=>{ gSound=true; $("#gsnd").textContent="🔊"; gSpeak(gi); };
+$("#gsnd").onclick=()=>{ gSound=!gSound; $("#gsnd").textContent=gSound?"🔊":"🔇";
+  if(gSound) gSpeak(gi); else gHush(); };
+$("#gman").onclick=()=>{ gBranch="man"; $("#gask").hidden=true; gGo(gi+1); };
+$("#gauto").onclick=()=>{ gBranch="auto"; $("#gask").hidden=true; gGo(gi+1); };
+$("#guidebtn").onclick=()=>gStart();                    // no event object into the "quiet" flag
+if($("#guidebtn2")) $("#guidebtn2").onclick=()=>gStart();
+function gStuck(){ gStartAt(gWhereAmI()); }
+if($("#stuckbtn"))  $("#stuckbtn").onclick=gStuck;
+if($("#stuckbtn2")) $("#stuckbtn2").onclick=gStuck;
+document.addEventListener("click",e=>{                  // the 🧭 beside a step number
+  const g=e.target.closest(".gfrom"); if(!g) return;
+  e.preventDefault(); e.stopPropagation();
+  gStartAt(gStepIndex(g.dataset.guide), true);          // that exact step, even if it is already done
+},true);
+window.addEventListener("resize",gPlace);
+scroller.addEventListener("scroll",gPlace);
+
+setMode("range");
+goto(0); refresh();
+})();
+</script>
+<script>
+if("serviceWorker" in navigator) addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
