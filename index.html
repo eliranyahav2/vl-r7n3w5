@@ -507,7 +507,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <header class="topbar">
     <div class="brand">
       <h1>מעבדת וידאו</h1>
-      <span class="sub">ניתוח תנועה מסרטון · גרסה 2.8</span>
+      <span class="sub">ניתוח תנועה מסרטון · גרסה 2.9</span>
     </div>
     <button id="guidebtn" class="helpbtn" title="מדריך שלב-שלב">🧭<span class="tx"> מדריך שלב-שלב</span></button>
     <button id="stuckbtn" class="helpbtn" title="נתקעתי">🆘<span class="tx"> נתקעתי</span></button>
@@ -685,7 +685,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <div class="modal" id="help" hidden>
     <div class="hsheet" role="dialog" aria-modal="true" aria-label="הוראות">
       <header class="hhead">
-        <h2>איך מנתחים סרטון <small style="font-weight:400;font-size:.62em;opacity:.7">גרסה 2.8</small></h2>
+        <h2>איך מנתחים סרטון <small style="font-weight:400;font-size:.62em;opacity:.7">גרסה 2.9</small></h2>
         <div class="htabs">
           <button data-h="pc">💻 מחשב</button>
           <button data-h="ph">📱 טלפון</button>
@@ -2625,7 +2625,7 @@ function gPlace(){
   const s=GSTEPS[gi], p=$("#gpoint"), tip=$("#gtip");
   if(!gOn||!s){ p.hidden=true; gDemo(null); return; }
   gDemo(s.demo ? s.demo() : null);
-  let stxt=gVal(s.say)||"";
+  let stxt=isPhone() ? "" : (gVal(s.say)||"");           // phone: no text over the video
   if(gMin){
     if(stxt && stxt!==gLastSay){ gLastSay=stxt; gSayUntil=Date.now()+3800; }
     if(Date.now()>gSayUntil) stxt="";
@@ -2712,9 +2712,13 @@ function gGo(i,force){
   if(!GSTEPS[i]){ gStop(); return; }
   gi=i; const s=GSTEPS[i];
   clearTimeout(gAutoMinT);
-  if(gMin){ gMin=false; $("#gbub").classList.remove("ok","ping"); }
   gSnap = s.snap ? s.snap() : null;
   gAlready = s.ok ? !!s.ok() : false;
+  // phone: a task step shows only the arrow / hand — the text waits in the square until it is tapped.
+  // computer: the card opens on every step.
+  const bub=$("#gbub"); bub.classList.remove("ok","ping");
+  gMin = isPhone() && !!s.done && !gAlready;
+  if(gMin){ void bub.offsetWidth; bub.classList.add("ping"); }
   $("#gtip").hidden=gMin; $("#gask").hidden=true; gShowBubble();
   $("#gnum").textContent=(i+1)+"/"+GSTEPS.length;
   $("#gttl").textContent=s.ttl;
@@ -2736,7 +2740,7 @@ function gGo(i,force){
   if(tel){ try{ tel.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"}); }catch(e){} }
   requestAnimationFrame(gPlace);
   gSpeak(i);
-  setTimeout(gArmAutoMin, 350);          // after playback has started, so its length is known
+  if(!isPhone()) setTimeout(gArmAutoMin, 350);          // after playback has started, so its length is known
   if(s.ask) $("#gask").hidden=false;
 }
 const VOICE=["voice-01.m4a","voice-02.m4a","voice-03.m4a","voice-04.m4a","voice-05.m4a","voice-06.m4a","voice-07.m4a","voice-08.m4a","voice-09.m4a","voice-10.m4a","voice-11.m4a","voice-12.m4a","voice-13.m4a","voice-14.m4a","voice-15.m4a","voice-16.m4a","voice-17.m4a","voice-18.m4a","voice-19.m4a","voice-20.m4a","voice-21.m4a","voice-22.m4a","voice-23.m4a"];
@@ -2772,7 +2776,7 @@ function gDoneFlash(){                                  // a visible "done" beat
   const tip=$("#gtip"), h=$("#gdone");
   gDing(false);
   clearTimeout(gAutoMinT);
-  if(gMin){ $("#gbub").classList.add("ok"); gMinimize(false); }
+  if(gMin){ $("#gbub").classList.add("ok"); if(!isPhone()) gMinimize(false); }
   tip.classList.add("done"); h.hidden=false; h.textContent="✔ יופי! ממשיכים…";
   $("#gpoint").hidden=true; $("#gsay").hidden=true; gDemo(null);
   const at=gi;
