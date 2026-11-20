@@ -331,7 +331,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   .brand .sub,#srcname{display:none}
   .brand h1{font-size:17px}
   .filebtn.cam{display:inline-block}
-  .topbar #close{display:none}                 /* on a phone the ✕ chip on the frame closes the video */
+  .topbar #close:disabled{display:none}        /* on a phone: shown next to "טעינת סרטון" only while a video is open */
   .topbar #guidebtn,.topbar #stuckbtn{display:none}   /* on a phone they live in the bottom tabs */
   .topbar{gap:6px;row-gap:4px}
   .filebtn.primary,.topbar button{padding:7px 10px;font-size:13.5px}
@@ -431,6 +431,11 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   body[data-mtab="settings"] .rail{grid-column:1/3;grid-row:1/3}
   body[data-mtab="settings"] .settings{grid-template-columns:1fr 1fr 1fr 1fr;align-items:end}
   body[data-mtab="settings"] .filebar{display:flex}
+  /* sideways the top bar is hidden: "טעינת סרטון" and "✕ סגירת הסרטון" sit side by side at the top of the column */
+  .rail>.filebar,.filebar{display:flex}
+  body:not([data-mtab="settings"]) .filebar>:not(#filebtn2):not(#close2){display:none}
+  .filebar{order:-1;flex-wrap:nowrap}
+  .filebar>button{flex:1;padding:6px 6px;font-size:13px}
   body[data-mtab="settings"] .app>.deck{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -489,7 +494,10 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
 #gask button{border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;
   background:var(--panel-2);color:var(--ink);font:700 16px var(--font-body)}
 #gask button.rec{background:#2979FF;border-color:#2979FF;color:#fff}
+#close2:disabled{display:none}
+@media (max-width:900px){ .topbar:has(#close:not(:disabled)) .brand{display:none} }
 @media (max-width:400px){ .topbar{gap:4px!important} .filebtn.primary,.topbar button{padding:7px 7px!important;font-size:13px!important} .brand h1{font-size:15.5px!important} }
+@media (max-width:370px){ .filebtn.primary,.topbar button{padding:7px 5px!important} .topbar{gap:3px!important} }
 @media (max-height:500px) and (orientation:landscape){ #gtip{width:min(270px,34vw)!important;max-height:calc(100dvh - 56px);overflow:auto;font-size:14px} }
 @media (max-width:860px){ #gtip{width:min(340px,94vw);font-size:15.2px;max-height:40vh;overflow:auto}
   #gtip .gbody{font-size:15px} }
@@ -499,7 +507,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <header class="topbar">
     <div class="brand">
       <h1>מעבדת וידאו</h1>
-      <span class="sub">ניתוח תנועה מסרטון · גרסה 2.7</span>
+      <span class="sub">ניתוח תנועה מסרטון · גרסה 2.8</span>
     </div>
     <button id="guidebtn" class="helpbtn" title="מדריך שלב-שלב">🧭<span class="tx"> מדריך שלב-שלב</span></button>
     <button id="stuckbtn" class="helpbtn" title="נתקעתי">🆘<span class="tx"> נתקעתי</span></button>
@@ -508,7 +516,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
     <button class="filebtn primary cam" id="cambtn" title="צילום">📷<span class="tx"> צילום</span></button>
     <label class="filebtn cam" style="display:none"><input type="file" id="camfile" accept="video/*" capture="environment"></label>
     <label class="filebtn primary">טעינת סרטון…<input type="file" id="file" accept="video/*"></label>
-    <button id="close" class="ghost" disabled>סגירת הסרטון</button>
+    <button id="close" class="ghost" disabled>✕ סגירת הסרטון</button>
   </header>
 
   <div class="main">
@@ -529,7 +537,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
       <div class="filebar">
         <button class="filebtn primary" id="cambtn2">📷 צילום</button>
         <button id="filebtn2">טעינת סרטון…</button>
-        <button id="close2" class="ghost">סגירת הסרטון</button>
+        <button id="close2" class="ghost" disabled>✕ סגירת הסרטון</button>
         <button id="guidebtn2" class="helpbtn">🧭 מדריך שלב-שלב</button>
         <button id="stuckbtn2" class="helpbtn">🆘 נתקעתי</button>
         <button id="helpbtn2" class="helpbtn">❓ הוראות</button>
@@ -677,7 +685,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <div class="modal" id="help" hidden>
     <div class="hsheet" role="dialog" aria-modal="true" aria-label="הוראות">
       <header class="hhead">
-        <h2>איך מנתחים סרטון <small style="font-weight:400;font-size:.62em;opacity:.7">גרסה 2.7</small></h2>
+        <h2>איך מנתחים סרטון <small style="font-weight:400;font-size:.62em;opacity:.7">גרסה 2.8</small></h2>
         <div class="htabs">
           <button data-h="pc">💻 מחשב</button>
           <button data-h="ph">📱 טלפון</button>
@@ -1313,7 +1321,7 @@ function closeVideo(){
   ["s0","s1","s2","s3","s4"].forEach(id=>{ $("#"+id).disabled=true; $("#"+id).classList.remove("done"); });
   $("#v1").textContent="—"; $("#srcname").textContent="לא נטען סרטון";
   $("#fmax").textContent="0"; st.in=0; st.out=1;
-  $("#file").value=""; $("#close").disabled=true;
+  $("#file").value=""; $("#close").disabled=true; $("#close2").disabled=true;
   closeLabelEditor(false);
   setMode("org"); goto(0); refresh();
 }
@@ -1330,15 +1338,15 @@ $("#vclose").onclick=()=>{
   vcloseArmed=0; clearTimeout(vcloseT); b.textContent="✕ סגירת הסרטון"; b.classList.remove("warn");
   closeVideo();
 };
-setInterval(()=>{ const b=$("#vclose"); const on=(st.kind==="video"); if(b.hidden===on) b.hidden=!on; },400);
+let closeT=0;
+const closeLbl=t=>{ ["#close","#close2"].forEach(q=>{ const b=$(q); b.textContent=t; b.classList.toggle("warn", t!=="✕ סגירת הסרטון"); }); };
 $("#close").onclick=()=>{
-  const b=$("#close");
   if(P().size && !closeArmed){          // no modal dialogs — confirm inline
-    closeArmed=1; b.textContent="לחצו שוב לאישור";
-    setTimeout(()=>{ closeArmed=0; b.textContent="סגירת הסרטון"; },3000);
+    closeArmed=1; closeLbl("לחצו שוב לסגירה");
+    clearTimeout(closeT); closeT=setTimeout(()=>{ closeArmed=0; closeLbl("✕ סגירת הסרטון"); },3000);
     return;
   }
-  closeArmed=0; b.textContent="סגירת הסרטון"; closeVideo();
+  closeArmed=0; clearTimeout(closeT); closeLbl("✕ סגירת הסרטון"); closeVideo();
 };
 
 /* ================= automatic tracking =================
@@ -1768,7 +1776,7 @@ function openFile(f){
     $("#wrap").style.aspectRatio=video.videoWidth+"/"+video.videoHeight; fitLayout(); sizeWrap();
     $("#srcname").textContent=f.name+" · "+video.videoWidth+"\u00d7"+video.videoHeight
       +" · "+video.duration.toFixed(1)+"s";
-    $("#close").disabled=false;
+    $("#close").disabled=false; $("#close2").disabled=false;
     ["s0","s1","s2","s3","s4"].forEach(id=>$("#"+id).disabled=false);
     $("#fpsdet").disabled=false; resetView();
     setMode("range"); goto(0); refresh();
@@ -2433,17 +2441,16 @@ const GSTEPS=[
  {ttl:"סרטון לא נכון?", b:"בכל רגע אפשר ללחוץ «סגירת הסרטון» ולבחור קובץ אחר. אם הסרטון הנוכחי מתאים — המשיכו.",
    sel:["#vclose","#close2","#close"]},
  {id:"range", ttl:"שלב 0 · משולש 1 מתוך 2", b:"גררו את המשולש השמאלי בסרגל הזמן אל הפריים שבו התנועה מתחילה. אחריו נטפל במשולש השני.",
-   sel:["#tlin"], hint:"ממתין למשולש השמאלי…", say:"משולש 1 מתוך 2 — תחילת התנועה",
+   sel:["#tlin"], hint:"ממתין למשולש השמאלי…",
    demo:()=>gDragDemo("tlin","גררו את המשולש השמאלי",""),
    snap:()=>st.in, done:n=>st.in!==n, ok:()=>st.in>0},
  {ttl:"שלב 0 · משולש 2 מתוך 2", b:"מצוין. עכשיו המשולש הימני — גררו אותו אל הפריים שבו התנועה מסתיימת.",
-   sel:["#tlout"], hint:"ממתין למשולש הימני…", say:"משולש 2 מתוך 2 — סוף התנועה",
+   sel:["#tlout"], hint:"ממתין למשולש הימני…",
    demo:()=>gDragDemo("tlout","עכשיו המשולש הימני",""),
    snap:()=>st.out, done:n=>st.out!==n, ok:()=>st.frames>1 && st.out<st.frames-1},
  {ttl:"בדקו את הגבולות", b:"שלוש לחיצות לפי הסדר: ⏮ לחזרה לתחילת התחום, ▶ לצפייה בתנועה, ושוב ⏮ לחזרה. אם התחום לא מדויק — חזרו אחורה והזיזו את המשולשים.",
    sel:()=>[gChk===1?"#play":"#first"],
    hint:()=>gChk===0?"שלב 1 מתוך 3: לחצו ⏮":(gChk===1?"שלב 2 מתוך 3: לחצו ▶":"שלב 3 מתוך 3: לחצו שוב ⏮"),
-   say:()=>gChk===0?"לחצו ⏮":(gChk===1?"עכשיו ▶ — צפו בתנועה":"ולסיום שוב ⏮"),
    snap:()=>{ gChk=0; return 0; }, done:()=>gChk>=3},
  {id:"axes", ttl:"שלב 1 · ראשית הצירים", b:"לחצו על «1 בחירת צירים», ואז החליטו איפה תשב ראשית הצירים ולחצו שם על הסרטון — בדרך כלל במקום שבו התנועה מתחילה.",
    sel:()=>st.mode==="org" ? [] : ["#s1"], avoid:()=>st.mode==="org" ? ["#overlay"] : [], hint:"ממתין לקביעת הראשית…",
