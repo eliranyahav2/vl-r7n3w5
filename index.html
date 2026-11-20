@@ -332,7 +332,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   .brand h1{font-size:17px}
   .filebtn.cam{display:inline-block}
   .topbar #close{display:none}                 /* on a phone the ✕ chip on the frame closes the video */
-  .topbar .tx{display:none}                    /* 🧭 and 🆘 as icons: the bar stays one row */
+  .topbar #guidebtn,.topbar #stuckbtn{display:none}   /* on a phone they live in the bottom tabs */
   .topbar{gap:6px;row-gap:4px}
   .filebtn.primary,.topbar button{padding:7px 10px;font-size:13.5px}
   .stage-col{order:1}
@@ -489,14 +489,17 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
 #gask button{border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;
   background:var(--panel-2);color:var(--ink);font:700 16px var(--font-body)}
 #gask button.rec{background:#2979FF;border-color:#2979FF;color:#fff}
-@media (max-width:860px){ #gtip{width:min(330px,92vw);font-size:15.2px} #gtip .gbody{font-size:15px} }
+@media (max-width:400px){ .topbar{gap:4px!important} .filebtn.primary,.topbar button{padding:7px 7px!important;font-size:13px!important} .brand h1{font-size:15.5px!important} }
+@media (max-height:500px) and (orientation:landscape){ #gtip{width:min(270px,34vw)!important;max-height:calc(100dvh - 56px);overflow:auto;font-size:14px} }
+@media (max-width:860px){ #gtip{width:min(340px,94vw);font-size:15.2px;max-height:40vh;overflow:auto}
+  #gtip .gbody{font-size:15px} }
 </style>
 
 <div class="app" lang="he">
   <header class="topbar">
     <div class="brand">
       <h1>מעבדת וידאו</h1>
-      <span class="sub">ניתוח תנועה מסרטון</span>
+      <span class="sub">ניתוח תנועה מסרטון · גרסה 2.7</span>
     </div>
     <button id="guidebtn" class="helpbtn" title="מדריך שלב-שלב">🧭<span class="tx"> מדריך שלב-שלב</span></button>
     <button id="stuckbtn" class="helpbtn" title="נתקעתי">🆘<span class="tx"> נתקעתי</span></button>
@@ -674,7 +677,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <div class="modal" id="help" hidden>
     <div class="hsheet" role="dialog" aria-modal="true" aria-label="הוראות">
       <header class="hhead">
-        <h2>איך מנתחים סרטון</h2>
+        <h2>איך מנתחים סרטון <small style="font-weight:400;font-size:.62em;opacity:.7">גרסה 2.7</small></h2>
         <div class="htabs">
           <button data-h="pc">💻 מחשב</button>
           <button data-h="ph">📱 טלפון</button>
@@ -690,6 +693,8 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
     <button data-m="video" class="on">🎬<span>סרטון</span></button>
     <button data-m="graph">📈<span>גרף וטבלה</span></button>
     <button data-m="settings">⚙<span>הגדרות</span></button>
+    <button class="mguide" id="mguide">🧭<span>מדריך</span></button>
+    <button class="mguide" id="mstuck">🆘<span>נתקעתי</span></button>
   </nav>
 
   <div class="deck">
@@ -2426,7 +2431,7 @@ const GSTEPS=[
    sel:["#filebtn2","header label.filebtn.primary"], hint:"ממתין לטעינת סרטון…",
    snap:()=>st.kind, done:n=>st.kind==="video"&&n!=="video", ok:()=>st.kind==="video"},
  {ttl:"סרטון לא נכון?", b:"בכל רגע אפשר ללחוץ «סגירת הסרטון» ולבחור קובץ אחר. אם הסרטון הנוכחי מתאים — המשיכו.",
-   sel:["#close2","#close"]},
+   sel:["#vclose","#close2","#close"]},
  {id:"range", ttl:"שלב 0 · משולש 1 מתוך 2", b:"גררו את המשולש השמאלי בסרגל הזמן אל הפריים שבו התנועה מתחילה. אחריו נטפל במשולש השני.",
    sel:["#tlin"], hint:"ממתין למשולש השמאלי…", say:"משולש 1 מתוך 2 — תחילת התנועה",
    demo:()=>gDragDemo("tlin","גררו את המשולש השמאלי",""),
@@ -2441,37 +2446,37 @@ const GSTEPS=[
    say:()=>gChk===0?"לחצו ⏮":(gChk===1?"עכשיו ▶ — צפו בתנועה":"ולסיום שוב ⏮"),
    snap:()=>{ gChk=0; return 0; }, done:()=>gChk>=3},
  {id:"axes", ttl:"שלב 1 · ראשית הצירים", b:"לחצו על «1 בחירת צירים», ואז החליטו איפה תשב ראשית הצירים ולחצו שם על הסרטון — בדרך כלל במקום שבו התנועה מתחילה.",
-   sel:["#s1"], hint:"ממתין לקביעת הראשית…",
+   sel:()=>st.mode==="org" ? [] : ["#s1"], avoid:()=>st.mode==="org" ? ["#overlay"] : [], hint:"ממתין לקביעת הראשית…",
    say:()=>st.orgSet?"יופי! הראשית נקבעה":"איפה תשב ראשית הצירים? לחצו על הנקודה בסרטון",
    sayGood:()=>!!st.orgSet,
    snap:()=>[!!st.orgSet,st.org.x,st.org.y], done:n=>!!st.orgSet&&(!n[0]||st.org.x!==n[1]||st.org.y!==n[2]), ok:()=>!!st.orgSet},
  {ttl:"דיוק הצירים", b:"לא מרוצים מהמיקום? גררו את ראשית הצירים למקום אחר. לסיבוב — גררו בעכבר את העיגול שבקצה אחת הזרועות. בלחיצה ימנית (בפלאפון: לחיצה ארוכה) יש זווית מדויקת, החזרה ל-0°, היפוך הכיוון החיובי ובחירת צבע. כשהכול מדויק — המשיכו.",
-   sel:["#ang"], at:()=>gFramePt(0.5,0.5)},
+   sel:["#ang"], avoid:["#overlay"]},
  {ttl:"נעלו את הצירים", b:"עכשיו שהצירים במקום — נעלו אותם כדי שלא יזוזו בטעות: לחיצה ימנית על הצירים ← «נעילת הצירים». בפלאפון — לחיצה ארוכה של שנייה וחצי.",
-   sel:["#cmenu [data-act='lock']"], hint:"ממתין לנעילת הצירים…", say:"נעלו את הצירים לפני שממשיכים",
+   sel:["#cmenu [data-act='lock']"], avoid:["#overlay","#cmenu"], hint:"ממתין לנעילת הצירים…", say:"נעלו את הצירים לפני שממשיכים",
    snap:()=>!!st.locked, done:()=>!!st.locked, ok:()=>!!st.locked},
  {id:"scale", ttl:"שלב 2 · מתיחת הסרגל", b:"לחצו «2 קנה מידה». עכשיו בחרו עצם שאורכו ידוע בסרטון — סרגל, שולחן, גובה אדם — לחצו על קצה אחד שלו וגררו עד הקצה השני, בדיוק כמו שהיד מדגימה. אפשר גם לתפוס כל קצה של הסרגל הירוק ולדייק אותו.",
-   sel:["#s2"], hint:"ממתין למתיחת הסרגל הירוק…", say:"גררו מקצה אחד של המרחק הידוע עד הקצה השני",
+   sel:()=>st.mode==="cal" ? [] : ["#s2"], avoid:()=>st.mode==="cal" ? ["#overlay"] : [], hint:"ממתין למתיחת הסרגל הירוק…", say:"גררו מקצה אחד של המרחק הידוע עד הקצה השני",
    demo:()=>gCalDemo(),
    snap:()=>st.cal?st.cal.x1+","+st.cal.y1+","+st.cal.x2+","+st.cal.y2:"",
    done:n=>(st.cal?st.cal.x1+","+st.cal.y1+","+st.cal.x2+","+st.cal.y2:"")!==n,
    ok:()=>!!st.calLocked || (!!st.cal && (st.cal.y1!==st.cal.y2 || $("#callen").value!=="1"))},
  {ttl:"שלב 2 · האורך במטרים", b:"היד מצביעה על המספר שעל הסרגל — לחצו עליו והקלידו את האורך האמיתי של אותו עצם במטרים. זה מה שמתרגם פיקסלים למטרים; בלי זה כל המספרים יהיו שגויים.",
-   sel:["#callen"], at:gLabelPt, hint:"ממתין להקלדת האורך…", say:"לחצו על המספר שעל הסרגל והקלידו את האורך",
+   sel:["#callen"], at:gLabelPt, avoid:["#overlay","#editlen"], hint:"ממתין להקלדת האורך…", say:"לחצו על המספר שעל הסרגל והקלידו את האורך",
    demo:()=>gTapDemo(gLabelPt(),"לחצו כאן והקלידו"),
    snap:()=>[$("#callen").value, st.scale], done:n=>$("#callen").value!==n[0]||st.scale!==n[1],
    ok:()=>!!st.calLocked || $("#callen").value!=="1"},
  {ttl:"נעלו את הסרגל", b:"לחיצה ימנית על הסרגל הירוק ← «נעילת הסרגל». בפלאפון — לחיצה ארוכה על הסרגל.",
-   sel:["#cmenu [data-act='callock']"], hint:"ממתין לנעילת הסרגל…", say:"נעלו את הסרגל",
+   sel:["#cmenu [data-act='callock']"], avoid:["#overlay","#cmenu"], hint:"ממתין לנעילת הסרגל…", say:"נעלו את הסרגל",
    snap:()=>!!st.calLocked, done:()=>!!st.calLocked, ok:()=>!!st.calLocked},
  {ttl:"איך נסמן את התנועה?", b:"יש שתי דרכים — ידנית או אוטומטית. בחרו אחת מהן.", sel:[], ask:1},
  {id:"manual", ttl:"שלב 3 · מעקב ידני", b:"לחצו «3 מעקב ידני», ואז לחצו על הגוף שאתם רוצים לעקוב אחריו — על אותה נקודה בדיוק בכל פריים.",
-   sel:["#s3"], hint:"ממתין לשלוש נקודות…",
+   sel:()=>st.mode==="mark" ? [] : ["#s3"], avoid:()=>st.mode==="mark" ? ["#overlay"] : [], hint:"ממתין לשלוש נקודות…",
    say:()=>P().size===0?"איפה הגוף שאתם רוצים לעקוב אחריו? לחצו עליו":"יופי! הסרטון מתקדם אוטומטית בכל לחיצה — המשיכו ללחוץ על אותה נקודה בכל פריים עד סוף התנועה",
    sayGood:()=>P().size>0,
    snap:()=>P().size, done:n=>P().size>=n+3, ok:()=>P().size>=3, branch:"man"},
  {id:"auto", ttl:"שלב 4 · מעקב אוטומטי", b:"לחצו «4 מעקב אוטומטי» וגררו מלבן סביב הגוף, כך שמרכזו יושב על הנקודה שרוצים לעקוב אחריה. התוכנה תחפש את אותה תבנית פיקסלים בכל הפריימים הבאים; אם היא מאבדת את הגוף — תקבלו הודעה ותוכלו לסמן מחדש. חשוב: הצבע של הגוף צריך להיות שונה מהצבע של הרקע — גוף בצבע דומה לרקע התוכנה לא תצליח לזהות.",
-   sel:["#s4"], hint:"ממתין לנקודות מהמעקב…", say:"סמנו מלבן סביב הגוף — המרכז על הנקודה שעוקבים אחריה. הגוף צריך להיות בצבע שונה מהרקע",
+   sel:()=>st.mode==="sel" ? [] : ["#s4"], avoid:()=>st.mode==="sel" ? ["#overlay"] : [], hint:"ממתין לנקודות מהמעקב…", say:"סמנו מלבן סביב הגוף — המרכז על הנקודה שעוקבים אחריה. הגוף צריך להיות בצבע שונה מהרקע",
    snap:()=>P().size, done:n=>P().size>=n+3, ok:()=>P().size>=3, branch:"auto"},
  {ttl:"טעות בסימון?", b:"↶ מבטל את הנקודה האחרונה (גם Ctrl+Z), 🗑 מנקה את כל הנקודות של המסה.", sel:["#undobtn"]},
  {ttl:"עוד גוף? (רשות)", b:"השלב הזה נחוץ רק אם בסרטון יש שני גופים או יותר שרוצים לעקוב אחרי כולם — למשל שתי עגלות שמתנגשות. אז לוחצים על + שעל הסרטון, נותנים שם לכל מסה, ועוקבים אחרי כל אחת בנפרד; לחיצה על שם מסה בוחרת אותה למעקב. גוף אחד? דלגו הלאה.",
@@ -2633,46 +2638,61 @@ function gPlace(){
   const tw=tip.offsetWidth||300, th=tip.offsetHeight||150;
   const fixed=gFree || gMin;
   const hb=document.querySelector("header.topbar");
-  const headY=(hb?hb.getBoundingClientRect().bottom:0)+10;
-  if(!el && !spot){                                   // no target: a card under the toolbar
-    p.hidden=true;
-    if(!fixed){ tip.style.left=Math.round((innerWidth-tw)/2)+"px";
-                tip.style.top=Math.round(Math.min(headY, innerHeight-th-10))+"px"; }
-    return;
-  }
+  const headY=Math.max(8,(hb && hb.offsetParent!==null ? hb.getBoundingClientRect().bottom : 0)+8);
+  const nav=document.querySelector(".mnav");
+  const footY=(nav && getComputedStyle(nav).display!=="none" && nav.getBoundingClientRect().height>0) ? nav.getBoundingClientRect().top-8 : innerHeight-8;
   const r = el ? el.getBoundingClientRect()
-               : {left:spot.x-22,right:spot.x+22,top:spot.y-16,bottom:spot.y+16,width:44,height:32};
-  if(r.right<4||r.left>innerWidth-4||r.bottom<4||r.top>innerHeight-4){ p.hidden=true; }
-  else {
-    const below=r.top < th+58;                        // not enough room above: arrow under the target
-    const cx=Math.max(18,Math.min(innerWidth-18, r.left+r.width/2));
+               : (spot ? {left:spot.x-22,right:spot.x+22,top:spot.y-16,bottom:spot.y+16,width:44,height:32} : null);
+  // what the card must never cover: the target, plus wherever the student is acting right now
+  const blocks=[];
+  if(r) blocks.push({l:r.left-10,r:r.right+10,t:r.top-10,b:r.bottom+10});
+  for(const q of (gVal(s.avoid)||[])){
+    const e=document.querySelector(q); if(!e || e.offsetParent===null) continue;
+    const k=e.getBoundingClientRect(); if(k.width<4||k.height<4) continue;
+    blocks.push({l:k.left-4,r:k.right+4,t:k.top-4,b:k.bottom+4});
+  }
+  const over=(x,y)=>blocks.reduce((sum,k)=>{
+    const w=Math.min(x+tw,k.r)-Math.max(x,k.l), h=Math.min(y+th,k.b)-Math.max(y,k.t);
+    return sum+((w>0&&h>0)?w*h:0); },0);
+  const clampX=v=>Math.max(8,Math.min(innerWidth-tw-8,v));
+  const fits=(x,y)=>x>=6 && x<=innerWidth-tw-6 && y>=6 && y+th<=innerHeight-6;
+  // the arrow
+  let cx=innerWidth/2;
+  if(r && !(r.right<4||r.left>innerWidth-4||r.bottom<4||r.top>innerHeight-4)){
+    const below=r.top < 74;
+    cx=Math.max(18,Math.min(innerWidth-18, r.left+r.width/2));
     const cy=below ? r.bottom+4 : r.top-42;
     p.hidden=false; p.classList.toggle("up",below);
     p.style.left=cx+"px"; p.style.top=Math.max(4,Math.min(innerHeight-44,cy))+"px";
-    // the card goes beyond the arrow, and never on top of the target itself
-    const clampX=v=>Math.max(8,Math.min(innerWidth-tw-8,v));
-    const clampY=v=>Math.max(8,Math.min(innerHeight-th-8,v));
-    const hits=(x,y)=>!(x+tw<r.left-8 || x>r.right+8 || y+th<r.top-8 || y>r.bottom+8);
-    const cands=[];
-    cands.push([clampX(cx-tw/2), r.top-th-46]);        // above the arrow
-    cands.push([clampX(cx-tw/2), r.bottom+46]);        // below the arrow
-    cands.push([r.right+14, clampY(r.top-10)]);        // to the right
-    cands.push([r.left-tw-14, clampY(r.top-10)]);      // to the left
-    let tx=clampX(cx-tw/2), ty=clampY(below ? r.bottom+46 : r.top-46-th), placed=false;
-    for(const [x,y] of cands){
-      if(x<8 || x>innerWidth-tw-8 || y<8 || y>innerHeight-th-8) continue;
-      if(hits(x,y)) continue;
-      tx=x; ty=y; placed=true; break;
-    }
-    if(!placed){                                       // nothing fits cleanly: pick the roomiest side
-      const room=[[r.top-8,[clampX(cx-tw/2), clampY(r.top-th-12)]],
-                  [innerHeight-r.bottom-8,[clampX(cx-tw/2), clampY(r.bottom+12)]],
-                  [innerWidth-r.right-8,[clampX(r.right+12), clampY(r.top)]],
-                  [r.left-8,[clampX(r.left-tw-12), clampY(r.top)]]];
-      room.sort((a,b)=>b[0]-a[0]); tx=room[0][1][0]; ty=room[0][1][1];
-    }
-    if(!fixed){ tip.style.left=Math.round(tx)+"px"; tip.style.top=Math.round(ty)+"px"; }
+  } else p.hidden=true;
+  if(fixed) return;
+  // places to try: next to the arrow first, then docked at the bottom (above the tabs) or the top
+  const cands=[];
+  if(r){
+    cands.push([clampX(cx-tw/2), r.top-th-46]);
+    cands.push([clampX(cx-tw/2), r.bottom+46]);
+    cands.push([r.right+14, Math.max(8,Math.min(innerHeight-th-8,r.top-10))]);
+    cands.push([r.left-tw-14, Math.max(8,Math.min(innerHeight-th-8,r.top-10))]);
   }
+  cands.push([clampX((innerWidth-tw)/2), footY-th]);
+  cands.push([clampX((innerWidth-tw)/2), headY]);
+  cands.push([clampX((innerWidth-tw)/2), Math.max(8,(innerHeight-th)/2)]);
+  // beside the action area (wide screens / landscape): left or right of every blocked box, and the corners
+  for(const k of blocks){
+    for(const y of [headY, footY-th, Math.max(8,Math.min(footY-th,k.t))]){
+      cands.push([k.r+8, y]); cands.push([k.l-tw-8, y]);
+    }
+  }
+  for(const y of [headY, footY-th]){ cands.push([8,y]); cands.push([innerWidth-tw-8,y]); }
+  let best=null;
+  for(const [x,y] of cands){
+    if(!fits(x,y)) continue;
+    const o=over(x,y);
+    if(o===0){ best=[x,y,0]; break; }
+    if(!best || o<best[2]) best=[x,y,o];
+  }
+  if(!best) best=[clampX((innerWidth-tw)/2), Math.max(8,footY-th), 1];
+  tip.style.left=Math.round(best[0])+"px"; tip.style.top=Math.round(best[1])+"px";
 }
 function gGo(i,force){
   for(;;){                                              // skip the other branch, and anything already done
@@ -2802,9 +2822,11 @@ $("#gsnd").onclick=()=>{ gSound=!gSound; $("#gsnd").textContent=gSound?"🔊":"�
 $("#gman").onclick=()=>{ gBranch="man"; $("#gask").hidden=true; gGo(gi+1); };
 $("#gauto").onclick=()=>{ gBranch="auto"; $("#gask").hidden=true; gGo(gi+1); };
 $("#guidebtn").onclick=()=>gStart();                    // no event object into the "quiet" flag
+$("#mguide").onclick=()=>gStart();
 if($("#guidebtn2")) $("#guidebtn2").onclick=()=>gStart();
 function gStuck(){ gStartAt(gWhereAmI()); }
 if($("#stuckbtn"))  $("#stuckbtn").onclick=gStuck;
+$("#mstuck").onclick=gStuck;
 if($("#stuckbtn2")) $("#stuckbtn2").onclick=gStuck;
 document.addEventListener("click",e=>{                  // the 🧭 beside a step number
   const g=e.target.closest(".gfrom"); if(!g) return;
