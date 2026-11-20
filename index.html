@@ -461,6 +461,10 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
 .step .gfrom{position:absolute;top:2px;left:23px;cursor:pointer;font-size:12px;line-height:16px;opacity:.7}
 .step .gfrom:hover{opacity:1}
 #gtip.done .gttl{color:#8FE3C5}
+#gbnext{position:fixed;z-index:62;left:10px;min-width:52px;height:38px;padding:0 12px;border-radius:12px;border:none;
+  background:#2B7BFF;color:#fff;font:700 15px var(--font);box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer;white-space:nowrap}
+#gbnext:hover,#gbnext:active{background:#2B7BFF;color:#fff}
+#gbnext.ok,#gbnext.ok:hover{background:#16A34A}
 #gbub{position:fixed;z-index:62;left:10px;top:46%;width:52px;height:52px;border-radius:14px;border:none;
   background:#14202A;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer;touch-action:none;
   display:grid;place-items:center;font:700 13px var(--font-num);padding:0}
@@ -507,7 +511,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <header class="topbar">
     <div class="brand">
       <h1>מעבדת וידאו</h1>
-      <span class="sub">ניתוח תנועה מסרטון · גרסה 3.0</span>
+      <span class="sub">ניתוח תנועה מסרטון · גרסה 3.1</span>
     </div>
     <button id="guidebtn" class="helpbtn" title="מדריך שלב-שלב">🧭<span class="tx"> מדריך שלב-שלב</span></button>
     <button id="stuckbtn" class="helpbtn" title="נתקעתי">🆘<span class="tx"> נתקעתי</span></button>
@@ -685,7 +689,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <div class="modal" id="help" hidden>
     <div class="hsheet" role="dialog" aria-modal="true" aria-label="הוראות">
       <header class="hhead">
-        <h2>איך מנתחים סרטון <small style="font-weight:400;font-size:.62em;opacity:.7">גרסה 3.0</small></h2>
+        <h2>איך מנתחים סרטון <small style="font-weight:400;font-size:.62em;opacity:.7">גרסה 3.1</small></h2>
         <div class="htabs">
           <button data-h="pc">💻 מחשב</button>
           <button data-h="ph">📱 טלפון</button>
@@ -745,6 +749,7 @@ textarea{width:100%;height:100%;font-family:var(--font-num);font-size:12.5px;bac
   <div class="gnote" id="gnoteA" hidden></div><div class="gnote" id="gnoteB" hidden></div>
   <div class="gfing" id="gfing">&#9995;</div></div>
 <div id="gsay" hidden></div>
+<button id="gbnext" hidden>הבא ›</button>
 <button id="gbub" hidden title="הצגת ההוראות"><span class="bi">&#129517;</span><span class="bn" id="gbubn">1</span></button>
 <audio id="gaudio" preload="auto"></audio>
 <div id="gpoint" hidden>&#9660;</div>
@@ -2457,18 +2462,21 @@ const GSTEPS=[
    snap:()=>{ gChk=0; return 0; }, done:()=>gChk>=3},
  {id:"axes", ttl:"שלב 1 · ראשית הצירים", b:"לחצו על «1 בחירת צירים», ואז החליטו איפה תשב ראשית הצירים ולחצו שם על הסרטון — בדרך כלל במקום שבו התנועה מתחילה.",
    sel:()=>st.mode==="org" ? [] : ["#s1"], avoid:()=>st.mode==="org" ? ["#overlay"] : [], hint:"ממתין לקביעת הראשית…",
+   demo:()=>(st.mode==="org" && !st.orgSet) ? gOrgDemo() : null,
    say:()=>st.orgSet?"יופי! הראשית נקבעה":"איפה תשב ראשית הצירים? לחצו על הנקודה בסרטון",
    sayGood:()=>!!st.orgSet,
    snap:()=>[!!st.orgSet,st.org.x,st.org.y], done:n=>!!st.orgSet&&(!n[0]||st.org.x!==n[1]||st.org.y!==n[2]), ok:()=>!!st.orgSet},
  {ttl:"דיוק הצירים", b:"לא מרוצים מהמיקום? גררו את ראשית הצירים למקום אחר. לסיבוב — גררו בעכבר את העיגול שבקצה אחת הזרועות. בלחיצה ימנית (בפלאפון: לחיצה ארוכה) יש זווית מדויקת, החזרה ל-0°, היפוך הכיוון החיובי ובחירת צבע. כשהכול מדויק — המשיכו.",
-   sel:["#ang"], avoid:["#overlay"]},
+   sel:[], at:gOrgPt, avoid:["#overlay","#cmenu"], demo:()=>gAxesDemo(),
+   hint:"גררו או סובבו לפי הצורך, ואז נעלו — או לחצו «הבא»",
+   snap:()=>0, done:()=>!!st.locked, ok:()=>!!st.locked},
  {ttl:"נעלו את הצירים", b:"עכשיו שהצירים במקום — נעלו אותם כדי שלא יזוזו בטעות: לחיצה ימנית על הצירים ← «נעילת הצירים». בפלאפון — לחיצה ארוכה של שנייה וחצי.",
    sel:["#cmenu [data-act='lock']"], at:gOrgPt, avoid:["#overlay","#cmenu"], hint:"ממתין לנעילת הצירים…", say:"נעלו את הצירים לפני שממשיכים",
    demo:()=>gHoldDemo(gOrgPt(), gLockNote("הצירים")),
    snap:()=>!!st.locked, done:()=>!!st.locked, ok:()=>!!st.locked},
  {id:"scale", ttl:"שלב 2 · מתיחת הסרגל", b:"לחצו «2 קנה מידה». עכשיו בחרו עצם שאורכו ידוע בסרטון — סרגל, שולחן, גובה אדם — לחצו על קצה אחד שלו וגררו עד הקצה השני, בדיוק כמו שהיד מדגימה. אפשר גם לתפוס כל קצה של הסרגל הירוק ולדייק אותו.",
    sel:()=>st.mode==="cal" ? [] : ["#s2"], avoid:()=>st.mode==="cal" ? ["#overlay"] : [], hint:"ממתין למתיחת הסרגל הירוק…", say:"גררו מקצה אחד של המרחק הידוע עד הקצה השני",
-   demo:()=>gCalDemo(),
+   demo:()=>(st.mode==="cal" ? gCalEndsDemo() : null),
    snap:()=>st.cal?st.cal.x1+","+st.cal.y1+","+st.cal.x2+","+st.cal.y2:"",
    done:n=>(st.cal?st.cal.x1+","+st.cal.y1+","+st.cal.x2+","+st.cal.y2:"")!==n,
    ok:()=>!!st.calLocked || (!!st.cal && (st.cal.y1!==st.cal.y2 || $("#callen").value!=="1"))},
@@ -2482,17 +2490,23 @@ const GSTEPS=[
    demo:()=>gHoldDemo(gCalPt(), gLockNote("הסרגל")),
    snap:()=>!!st.calLocked, done:()=>!!st.calLocked, ok:()=>!!st.calLocked},
  {ttl:"איך נסמן את התנועה?", b:"יש שתי דרכים — ידנית או אוטומטית. בחרו אחת מהן.", sel:[], ask:1},
- {id:"manual", ttl:"שלב 3 · מעקב ידני", b:"לחצו «3 מעקב ידני», ואז לחצו על הגוף שאתם רוצים לעקוב אחריו — על אותה נקודה בדיוק בכל פריים.",
+ {id:"manual", ttl:"שלב 3 · מעקב ידני", b:"לחצו «3 מעקב ידני», ואז לחצו על הגוף שאתם רוצים לעקוב אחריו — על אותה נקודה בדיוק בכל פריים. כשסיימתם לעקוב אחרי הגוף עד סוף התנועה — לחצו «הבא» כדי להמשיך לשלב הגרפים.",
    sel:()=>st.mode==="mark" ? [] : ["#s3"], avoid:()=>st.mode==="mark" ? ["#overlay"] : [], hint:"ממתין לשלוש נקודות…",
    say:()=>P().size===0?"איפה הגוף שאתם רוצים לעקוב אחריו? לחצו עליו":"יופי! הסרטון מתקדם אוטומטית בכל לחיצה — המשיכו ללחוץ על אותה נקודה בכל פריים עד סוף התנועה",
    sayGood:()=>P().size>0,
-   snap:()=>P().size, done:n=>P().size>=n+3, ok:()=>P().size>=3, branch:"man"},
- {id:"auto", ttl:"שלב 4 · מעקב אוטומטי", b:"לחצו «4 מעקב אוטומטי» וגררו מלבן סביב הגוף, כך שמרכזו יושב על הנקודה שרוצים לעקוב אחריה. התוכנה תחפש את אותה תבנית פיקסלים בכל הפריימים הבאים; אם היא מאבדת את הגוף — תקבלו הודעה ותוכלו לסמן מחדש. חשוב: הצבע של הגוף צריך להיות שונה מהצבע של הרקע — גוף בצבע דומה לרקע התוכנה לא תצליח לזהות.",
+   hint:"כשסיימתם לעקוב אחרי הגוף עד סוף התנועה — לחצו «הבא» כדי לעבור לשלב הגרפים",
+   ok:()=>P().size>=3 && gi!==gStepIndex("manual"), branch:"man"},
+ {id:"auto", ttl:"שלב 4 · מעקב אוטומטי", b:"לחצו «4 מעקב אוטומטי» וגררו מלבן סביב הגוף, כך שמרכזו יושב על הנקודה שרוצים לעקוב אחריה. התוכנה תחפש את אותה תבנית פיקסלים בכל הפריימים הבאים; אם היא מאבדת את הגוף — תקבלו הודעה ותוכלו לסמן מחדש. חשוב: הצבע של הגוף צריך להיות שונה מהצבע של הרקע — גוף בצבע דומה לרקע התוכנה לא תצליח לזהות. כשהמעקב הסתיים — לחצו «הבא» כדי להמשיך לשלב הגרפים.",
    sel:()=>st.mode==="sel" ? [] : ["#s4"], avoid:()=>st.mode==="sel" ? ["#overlay"] : [], hint:"ממתין לנקודות מהמעקב…", say:"סמנו מלבן סביב הגוף — המרכז על הנקודה שעוקבים אחריה. הגוף צריך להיות בצבע שונה מהרקע",
-   snap:()=>P().size, done:n=>P().size>=n+3, ok:()=>P().size>=3, branch:"auto"},
+   hint:"כשהמעקב הסתיים והגוף סומן עד סוף התנועה — לחצו «הבא» כדי לעבור לשלב הגרפים",
+   ok:()=>P().size>=3 && gi!==gStepIndex("auto"), branch:"auto"},
  {ttl:"טעות בסימון?", b:"↶ מבטל את הנקודה האחרונה (גם Ctrl+Z), 🗑 מנקה את כל הנקודות של המסה.", sel:["#undobtn"]},
  {ttl:"עוד גוף? (רשות)", b:"השלב הזה נחוץ רק אם בסרטון יש שני גופים או יותר שרוצים לעקוב אחרי כולם — למשל שתי עגלות שמתנגשות. אז לוחצים על + שעל הסרטון, נותנים שם לכל מסה, ועוקבים אחרי כל אחת בנפרד; לחיצה על שם מסה בוחרת אותה למעקב. גוף אחד? דלגו הלאה.",
    sel:["#addm",".mchips"], tab:"video"},
+ {id:"tograph", ttl:"מעבר לגרף", b:"בפלאפון הגרף והטבלה נמצאים בלשונית נפרדת — לחצו על «📈 גרף וטבלה» בסרגל התחתון.",
+   sel:['.mnav button[data-m="graph"]'], hint:"ממתין ללחיצה על «גרף וטבלה»…",
+   demo:()=>gTapDemo(gNavPt("graph"),"לחצו כאן לגרף ולטבלה"),
+   snap:()=>0, done:()=>document.body.dataset.mtab==="graph", ok:()=>!isPhone()},
  {ttl:"הגרף · הציר האנכי", b:"כאן בוחרים מה יוצג בציר האנכי: מיקום x או y, מהירות, או תאוצה. זה הגודל שנחקור.",
    sel:["#ysel"], tab:"graph", pane:"graph"},
  {ttl:"הגרף · הציר האופקי", b:"וכאן בוחרים את הציר האופקי: זמן, או אחד המיקומים. למשל y כפונקציה של t, או y כפונקציה של x למסלול.",
@@ -2523,6 +2537,30 @@ function gCalDemo(){                                   // end to end of a known 
   return {kind:"drag", x1:r.left+r.width*0.27, y1:y, x2:r.left+r.width*0.73, y2:y,
           a:"גררו מקצה אחד של המרחק הידוע", b:"ועד הקצה השני"};
 }
+const gPhase=(n,ms)=>Math.floor(Date.now()/(ms||3400))%n;      // take turns between a few demonstrations
+const gHoldWord=()=>(isPhone()||COARSE) ? "לחיצה ארוכה" : "לחיצה ימנית";
+function gOrgDemo(){                                    // set the origin: tap where it should sit
+  const o=gVidPt(st.org.x, st.org.y); if(!o) return null;
+  return {kind:"tap", x1:o.x, y1:o.y, x2:o.x, y2:o.y, a:"", b:"לחצו במקום שבו תשב ראשית הצירים"};
+}
+function gAxesDemo(){                                   // fine-tune: drag the origin, or hold it for the menu
+  const o=gOrgPt(), r=ov.getBoundingClientRect(); if(!o || r.width<60 || gMenuOpen()) return null;
+  if(gPhase(2)===0){
+    const dx=(o.x < r.left+r.width/2 ? 1 : -1)*Math.min(110, r.width*0.22);
+    return {kind:"drag", x1:o.x, y1:o.y, x2:o.x+dx, y2:o.y, a:"", b:"גררו את הראשית למיקום הרצוי"};
+  }
+  return {kind:"tap", x1:o.x, y1:o.y, x2:o.x, y2:o.y, a:"", b:gHoldWord()+" כאן ← תפריט: זווית, איפוס, היפוך, נעילה"};
+}
+function gCalEndsDemo(){                                // the hand sits on the real ends of the green ruler
+  if(!st.cal) return gCalDemo();
+  const a=gVidPt(st.cal.x1, st.cal.y1), b=gVidPt(st.cal.x2, st.cal.y2); if(!a||!b) return null;
+  return gPhase(2)===0
+    ? {kind:"tap", x1:a.x, y1:a.y, x2:a.x, y2:a.y, a:"", b:"גררו את הקצה הזה לתחילת העצם"}
+    : {kind:"tap", x1:b.x, y1:b.y, x2:b.x, y2:b.y, a:"", b:"ואת הקצה הזה לסוף העצם"};
+}
+function gNavPt(m){ const e=document.querySelector('.mnav button[data-m="'+m+'"]');
+  if(!e || e.getBoundingClientRect().height<4) return null; const r=e.getBoundingClientRect();
+  return {x:r.left+r.width/2, y:r.top+r.height/2}; }
 function gTapDemo(pt,note){ return pt ? {kind:"tap", x1:pt.x, y1:pt.y, x2:pt.x, y2:pt.y, a:note, b:""} : null; }
 function gDemo(pts){
   const d=$("#gdemo"), path=$("#gpath"), f=$("#gfing");
@@ -2598,6 +2636,18 @@ function gArmAutoMin(){
 function gShowBubble(){
   const b=$("#gbub"); b.hidden=!gMin || !gOn;
   $("#gbubn").textContent=(gi+1)+"/"+GSTEPS.length;
+  gPlaceNext();
+}
+function gPlaceNext(){                                  // phone: «הבא» always reachable above the square
+  const n=$("#gbnext"), b=$("#gbub");
+  n.hidden=b.hidden;
+  if(n.hidden) return;
+  const s=GSTEPS[gi]||{};
+  n.textContent = gFlash ? "✔ הבא ›" : (s.last ? "סיום" : (s.ask ? "בחירה ›" : (s.done&&!gAlready ? "דילוג ›" : "הבא ›")));
+  n.classList.toggle("ok", !!gFlash);
+  const r=b.getBoundingClientRect();
+  n.style.left=Math.max(4, Math.min(innerWidth-n.offsetWidth-4, r.left))+"px";
+  n.style.top=Math.max(4, r.top-46)+"px";
 }
 function gMinimize(on){
   gMin=on;
@@ -2613,7 +2663,7 @@ function gMinimize(on){
     if(Math.abs(e.clientY-d.y)+Math.abs(e.clientX-d.x)>6) gBubMoved=true;
     if(!gBubMoved) return;
     b.style.top=Math.max(8,Math.min(innerHeight-60, d.t+e.clientY-d.y))+"px";
-    b.style.left=Math.max(6,Math.min(innerWidth-58, d.l+e.clientX-d.x))+"px"; });
+    b.style.left=Math.max(6,Math.min(innerWidth-58, d.l+e.clientX-d.x))+"px"; gPlaceNext(); });
   const up=()=>{ if(d && !gBubMoved){ clearTimeout(gAutoMinT); gMinimize(false); } d=null; };
   b.addEventListener("pointerup",up); b.addEventListener("pointercancel",()=>{ d=null; });
 })();                           // the student may drag the card out of the way
@@ -2758,6 +2808,7 @@ function gGo(i,force){
   if(s.ask) $("#gask").hidden=false;
 }
 const VOICE=["voice-01.m4a","voice-02.m4a","voice-03.m4a","voice-04.m4a","voice-05.m4a","voice-06.m4a","voice-07.m4a","voice-08.m4a","voice-09.m4a","voice-10.m4a","voice-11.m4a","voice-12.m4a","voice-13.m4a","voice-14.m4a","voice-15.m4a","voice-16.m4a","voice-17.m4a","voice-18.m4a","voice-19.m4a","voice-20.m4a","voice-21.m4a","voice-22.m4a","voice-23.m4a"];
+VOICE.splice(gStepIndex("tograph"),0,null);          // the phone-only «מעבר לגרף» step has no recording
 let gFlash=false, gSound=true, gAC=null, gLastSay="", gSayUntil=0;
 const gau=$("#gaudio");
 function gSpeak(i){                                     // the recorded explanation for this step
@@ -2791,6 +2842,7 @@ function gDoneFlash(){                                  // a visible "done" beat
   gDing(false);
   clearTimeout(gAutoMinT);
   if(gMin){ $("#gbub").classList.add("ok"); if(!isPhone()) gMinimize(false); }
+  gPlaceNext();
   tip.classList.add("done"); h.hidden=false; h.textContent="✔ יופי! ממשיכים…";
   $("#gpoint").hidden=true; $("#gsay").hidden=true; gDemo(null);
   const at=gi;
@@ -2819,7 +2871,7 @@ function gStart(quiet){
   gOn=true; clearInterval(gPoll);
   try{ const AC=window.AudioContext||window.webkitAudioContext;        // unlock audio on this gesture
        if(AC){ gAC=gAC||new AC(); if(gAC.state==="suspended") gAC.resume(); } }catch(e){}
-  gPoll=setInterval(()=>{ if(!gOn || gFlash) return; gPlace();
+  gPoll=setInterval(()=>{ if(!gOn) return; gPlaceNext(); if(gFlash) return; gPlace();
     const s=GSTEPS[gi]; if(!s) return;
     if(s.done && !gAlready){ const h=$("#gdone"), t="⏳ "+(gVal(s.hint)||"ממתין לביצוע…");
       if(h.textContent!==t) h.textContent=t; }
@@ -2831,8 +2883,13 @@ function gStop(){
   gOn=false; clearInterval(gPoll);
   if(gTarget){ gTarget.classList.remove("gtarget"); gTarget=null; }
   $("#gpoint").hidden=true; $("#gtip").hidden=true; $("#gask").hidden=true;
-  $("#gsay").hidden=true; gDemo(null); gHush(); $("#gbub").hidden=true;
+  $("#gsay").hidden=true; gDemo(null); gHush(); $("#gbub").hidden=true; $("#gbnext").hidden=true;
 }
+$("#gbnext").onclick=()=>{
+  const s=GSTEPS[gi];
+  if(s && s.ask && $("#gask").hidden){ gMinimize(false); $("#gask").hidden=false; return; }
+  $("#gnext").click();
+};
 $("#gnext").onclick=()=>{
   if(gFlash){ gFlash=false; $("#gtip").classList.remove("done"); }
   const s=GSTEPS[gi];
